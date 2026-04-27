@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mimisbrunnr — UI Directions</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    /* Near-black neutral palette */
+    --m-bg:        oklch(0.165 0.004 80);   /* warm-ish near-black */
+    --m-bg-2:      oklch(0.195 0.004 80);   /* surface */
+    --m-bg-3:      oklch(0.235 0.004 80);   /* raised surface */
+    --m-bg-4:      oklch(0.285 0.004 80);   /* hover */
+    --m-line:      oklch(0.305 0.004 80);
+    --m-line-soft: oklch(0.245 0.004 80);
+    --m-text:      oklch(0.955 0.005 80);   /* bone-white */
+    --m-text-2:    oklch(0.795 0.006 80);
+    --m-text-3:    oklch(0.605 0.006 80);
+    --m-text-4:    oklch(0.455 0.006 80);
+
+    /* Two accents */
+    --m-accent:    oklch(0.78 0.09 75);     /* warm amber — UI active */
+    --m-accent-d:  oklch(0.65 0.10 70);
+    --m-ai:        oklch(0.74 0.06 220);    /* cool desat cyan — AI */
+    --m-ai-d:      oklch(0.60 0.07 220);
+
+    --m-danger:    oklch(0.66 0.13 25);
+
+    --m-serif: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+    --m-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    --m-mono:  'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+  }
+
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: oklch(0.11 0.003 80);
+    color: var(--m-text);
+    font-family: var(--m-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  ::selection { background: color-mix(in oklch, var(--m-accent) 35%, transparent); color: var(--m-text); }
+
+  /* AI pulse — opacity-only, calm */
+  @keyframes m-pulse {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+  }
+  .m-pulse { animation: m-pulse 2.4s ease-in-out infinite; }
+
+  @keyframes m-cursor {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  .m-cursor { animation: m-cursor 1s steps(1) infinite; }
+
+  @keyframes m-orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes m-twinkle {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+  }
+
+  /* Slide in for panels */
+  @keyframes m-slide-in {
+    from { transform: translateX(8px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  .m-slide-in { animation: m-slide-in 150ms ease-out both; }
+
+  /* Scrollbar — minimal */
+  .m-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .m-scroll::-webkit-scrollbar-track { background: transparent; }
+  .m-scroll::-webkit-scrollbar-thumb { background: var(--m-line); border-radius: 4px; }
+  .m-scroll::-webkit-scrollbar-thumb:hover { background: var(--m-line); }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="src/data.jsx"></script>
+  <script type="text/babel" src="src/atoms.jsx"></script>
+  <script type="text/babel" src="src/sanctum.jsx"></script>
+  <script type="text/babel" src="src/atrium.jsx"></script>
+  <script type="text/babel" src="src/constellation.jsx"></script>
+  <script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>
