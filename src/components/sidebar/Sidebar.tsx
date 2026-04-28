@@ -1,5 +1,9 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useUIStore } from "@/store/uiStore";
+import { useVaultStore } from "@/store/vaultStore";
 import { Mark, Kbd } from "@/components/ui/atoms";
 import FileTree from "./FileTree";
 
@@ -114,6 +118,15 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const { location } = useRouterState();
   const { setCommandPaletteOpen } = useUIStore();
+  const { vaultPath, setVaultPath } = useVaultStore();
+
+  const { data: paths = [] } = useQuery({
+    queryKey: ['vault', vaultPath],
+    queryFn: () => invoke<string[]>('scan_vault', { vaultPath }),
+    enabled: !!vaultPath,
+  });
+
+  const vaultName = vaultPath?.split('/').pop() ?? 'no vault';
 
   const activeView = location.pathname.startsWith("/editor")
     ? "editor"
@@ -304,7 +317,7 @@ export default function AppSidebar() {
           <Mark size={14} color="var(--m-text)" />
         </span>
         <div style={{ flex: 1, fontSize: 11.5, lineHeight: 1.2 }}>
-          <div style={{ color: "var(--m-text-2)" }}>local vault</div>
+          <div style={{ color: "var(--m-text-2)" }}>{vaultName}</div>
           <div
             style={{
               color: "var(--m-text-4)",
@@ -312,10 +325,16 @@ export default function AppSidebar() {
               fontSize: 10,
             }}
           >
-            ~/notes · 247 files
+            {paths.length} files
           </div>
         </div>
-        <span style={{ color: "var(--m-text-3)", cursor: "pointer" }}>
+        <span
+          onClick={async () => {
+            const selected = await open({ directory: true, multiple: false });
+            if (typeof selected === "string") setVaultPath(selected);
+          }}
+          style={{ color: "var(--m-text-3)", cursor: "pointer" }}
+        >
           <IconGear size={13} />
         </span>
       </div>
