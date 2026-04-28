@@ -121,12 +121,12 @@ export default function AppSidebar() {
   const { vaultPath, setVaultPath } = useVaultStore();
 
   const { data: paths = [] } = useQuery({
-    queryKey: ['vault', vaultPath],
-    queryFn: () => invoke<string[]>('scan_vault', { vaultPath }),
+    queryKey: ["vault", vaultPath],
+    queryFn: () => invoke<string[]>("scan_vault", { vaultPath }),
     enabled: !!vaultPath,
   });
 
-  const vaultName = vaultPath?.split('/').pop() ?? 'no vault';
+  const vaultName = vaultPath?.split("/").pop() ?? "no vault";
 
   const activeView = location.pathname.startsWith("/editor")
     ? "editor"
