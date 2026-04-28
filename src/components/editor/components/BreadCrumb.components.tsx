@@ -13,19 +13,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDownIcon, Slash, Ellipsis } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import { Fragment } from "react";
 
 const COLLAPSE_THRESHOLD = 4;
 
 interface BreadCrumbProps {
   path: string;
+  className?: string;
 }
 
-export default function BreadCrumb({ path }: BreadCrumbProps) {
+export default function BreadCrumb({ path, className }: BreadCrumbProps) {
   const segments = path.split("/").filter(Boolean);
   const dirs = segments.slice(0, -1);
-  const filename = segments[segments.length - 1]?.replace(/\.md$/, "") ?? "";
+  const filename = segments[segments.length - 1];
 
   const isCollapsed = dirs.length > COLLAPSE_THRESHOLD;
   const visibleFirst = isCollapsed ? dirs.slice(0, 1) : dirs;
@@ -33,16 +34,14 @@ export default function BreadCrumb({ path }: BreadCrumbProps) {
   const visibleLast = isCollapsed ? dirs.slice(dirs.length - 1) : [];
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
+    <Breadcrumb className={className}>
+      <BreadcrumbList className="text-[10.5px]">
         {visibleFirst.map((dir) => (
           <Fragment key={dir}>
             <BreadcrumbItem>
               <BreadcrumbLink href="#">{dir}</BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <Slash />
-            </BreadcrumbSeparator>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
           </Fragment>
         ))}
 
@@ -52,8 +51,7 @@ export default function BreadCrumb({ path }: BreadCrumbProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className="flex items-center gap-1">
-                    <Ellipsis />
-                    <ChevronDownIcon className="size-3.5" />
+                    ...
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
@@ -65,9 +63,7 @@ export default function BreadCrumb({ path }: BreadCrumbProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <Slash />
-            </BreadcrumbSeparator>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
           </>
         )}
 
@@ -76,9 +72,7 @@ export default function BreadCrumb({ path }: BreadCrumbProps) {
             <BreadcrumbItem>
               <BreadcrumbLink href="#">{dir}</BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <Slash />
-            </BreadcrumbSeparator>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
           </Fragment>
         ))}
 
