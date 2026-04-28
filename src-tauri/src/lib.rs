@@ -9,6 +9,8 @@ pub fn run() {
             commands::fs::scan_vault,
             commands::fs::read_note,
             commands::fs::write_note,
+            commands::fs::list_dir,
+            commands::fs::home_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
