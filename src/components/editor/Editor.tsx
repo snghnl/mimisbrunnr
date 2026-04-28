@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link2, Sparkles } from "lucide-react";
 import { MTag, Dot, Kbd } from "@/components/ui/atoms";
+import BreadCrumb from "./components/BreadCrumb.components";
 
 interface PBlock {
   kind: "p";
@@ -30,7 +31,8 @@ interface GutterSuggestion {
 
 const SERIF = "var(--m-serif)";
 
-const NOTE_PATH = "ideas / on-compression-of-thought.md";
+const NOTE_PATH =
+  "ideas / test1 /test2/ test3/ test4/ on-compression-of-thought.md";
 const NOTE_TITLE = "On compression of thought";
 const NOTE_TAGS = ["idea", "pkm", "design"];
 
@@ -315,17 +317,7 @@ export default function Editor() {
       >
         <div style={{ maxWidth: 680, margin: "0 auto", padding: "0 56px" }}>
           {/* Breadcrumb */}
-          <div
-            style={{
-              fontFamily: "var(--m-mono)",
-              fontSize: 10.5,
-              color: "var(--m-text-4)",
-              marginBottom: 18,
-              letterSpacing: 0.4,
-            }}
-          >
-            {NOTE_PATH}
-          </div>
+          <BreadCrumb path={NOTE_PATH} className="mono-label" />
 
           {/* Title */}
           <h1
