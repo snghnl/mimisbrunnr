@@ -15,7 +15,7 @@
         "title": "mimisbrunnr",
         "width": 800,
         "height": 600,
-        "titleBarStyle": "overlay",
+        "titleBarStyle": "Overlay",
         "hiddenTitle": true
       }
     ],
