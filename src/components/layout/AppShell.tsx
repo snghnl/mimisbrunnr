@@ -43,6 +43,10 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
       : undefined,
     action: () => {
       setActiveNote(path);
+      navigate({
+        to: "/editor/$noteId",
+        params: { noteId: encodeURIComponent(path) },
+      });
       onClose();
     },
   }));
@@ -425,7 +429,7 @@ export default function AppShell() {
 
   const mainContent = !vaultPath ? (
     <VaultWelcome mode="onboarding" />
-  ) : !activeNoteId ? (
+  ) : !activeNoteId && !isEditorView ? (
     <VaultWelcome mode="file-picker" />
   ) : (
     <Outlet />

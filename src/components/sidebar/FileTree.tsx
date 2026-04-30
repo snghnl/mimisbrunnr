@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { useNavigate } from "@tanstack/react-router";
 import { useVaultStore } from "@/store/vaultStore";
 import { buildTree, VaultNode, FolderNode, NoteNode } from "@/lib/vault/tree";
 
@@ -98,11 +99,20 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
 
 function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
   const { activeNoteId, setActiveNote } = useVaultStore();
+  const navigate = useNavigate();
   const active = activeNoteId === node.path;
+
+  const handleClick = () => {
+    setActiveNote(node.path);
+    navigate({
+      to: "/editor/$noteId",
+      params: { noteId: encodeURIComponent(node.path) },
+    });
+  };
 
   return (
     <div
-      onClick={() => setActiveNote(node.path)}
+      onClick={handleClick}
       style={{
         display: "flex",
         alignItems: "center",
