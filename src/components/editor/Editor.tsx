@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useVaultStore } from "@/store/vaultStore";
 import BreadCrumb from "./components/BreadCrumb.components";
@@ -9,6 +9,7 @@ import FloatingToolbar from "./components/FloatingToolbar.components";
 import CodeMirrorEditor from "./CodeMirrorEditor";
 
 const SERIF = "var(--m-serif)";
+const AUTOSAVE_DELAY_MS = 3000;
 
 interface Props {
   noteId: string;
@@ -16,8 +17,12 @@ interface Props {
 
 export default function Editor({ noteId }: Props) {
   const { vaultPath } = useVaultStore();
+  const queryClient = useQueryClient();
   const [slashOpen, setSlash] = useState(false);
   const [wikiOpen, setWiki] = useState(false);
+
+  const contentRef = useRef("");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fullPath = vaultPath ? `${vaultPath}/${noteId}` : null;
 
@@ -26,6 +31,55 @@ export default function Editor({ noteId }: Props) {
     queryFn: () => invoke<string>("read_note", { path: fullPath! }),
     enabled: !!fullPath,
   });
+
+  const { mutate: saveNote } = useMutation({
+    mutationFn: (contentToSave: string) =>
+      invoke<void>("write_note", { path: fullPath!, content: contentToSave }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["note", fullPath] }),
+  });
+
+  // Keep ref in sync when the query delivers fresh data
+  useEffect(() => {
+    if (data !== undefined) contentRef.current = data;
+  }, [data]);
+
+  // Flush pending auto-save before switching notes to prevent data loss
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+        saveNote(contentRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteId]);
+
+  // Cmd+S / Ctrl+S — immediate save
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (saveTimerRef.current !== null) {
+          clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = null;
+        }
+        saveNote(contentRef.current);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [saveNote]);
+
+  const handleChange = (val: string) => {
+    contentRef.current = val;
+    if (saveTimerRef.current !== null) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      saveNote(val);
+    }, AUTOSAVE_DELAY_MS);
+  };
 
   const title = noteId.split("/").pop()?.replace(/\.md$/, "") ?? noteId;
   const pathDisplay = noteId.replace(/\//g, " / ");
@@ -111,6 +165,7 @@ export default function Editor({ noteId }: Props) {
           <CodeMirrorEditor
             key={noteId}
             value={data}
+            onChange={handleChange}
             onWikilinkClick={(_target) => {
               // TODO: navigate to note by target name
             }}
