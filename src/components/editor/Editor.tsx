@@ -82,7 +82,6 @@ export default function Editor({ noteId }: Props) {
   };
 
   const title = noteId.split("/").pop()?.replace(/\.md$/, "") ?? noteId;
-  const pathDisplay = noteId.replace(/\//g, " / ");
 
   if (isLoading) {
     return (
@@ -146,7 +145,7 @@ export default function Editor({ noteId }: Props) {
         }}
       >
         <div style={{ maxWidth: 680, margin: "0 auto", padding: "0 56px" }}>
-          <BreadCrumb path={pathDisplay} className="mono-label" />
+          <BreadCrumb path={noteId} className="mono-label" />
 
           <h1
             style={{
