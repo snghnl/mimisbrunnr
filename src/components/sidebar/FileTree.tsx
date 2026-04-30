@@ -5,64 +5,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { useVaultStore } from "@/store/vaultStore";
 import { useUIStore } from "@/store/uiStore";
 import { buildTree, VaultNode, FolderNode, NoteNode } from "@/lib/vault/tree";
-
-const IconChevRight = () => (
-  <svg
-    width={11}
-    height={11}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m9 6 6 6-6 6" />
-  </svg>
-);
-const IconChevDown = () => (
-  <svg
-    width={11}
-    height={11}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-const IconFolder = () => (
-  <svg
-    width={13}
-    height={13}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.6"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
-  </svg>
-);
-const IconFile = () => (
-  <svg
-    width={11}
-    height={11}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.4"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" />
-    <path d="M14 3v6h6" />
-  </svg>
-);
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  FolderIcon,
+  FileIcon,
+} from "lucide-react";
 
 function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
   const [open, setOpen] = useState(depth === 0);
@@ -77,7 +25,10 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
   useEffect(() => {
     if (isFocused) {
       setOpen(true);
-      headerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      headerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
     }
   }, [isFocused]);
 
@@ -105,10 +56,14 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
         }}
       >
         <span style={{ color: "var(--m-text-4)", display: "inline-flex" }}>
-          {open ? <IconChevDown /> : <IconChevRight />}
+          {open ? (
+            <ChevronDownIcon size={11} />
+          ) : (
+            <ChevronRightIcon size={11} />
+          )}
         </span>
         <span style={{ color: "var(--m-text-3)" }}>
-          <IconFolder />
+          <FolderIcon size={11} />
         </span>
         <span style={{ flex: 1 }}>{node.name}</span>
       </div>
@@ -160,7 +115,7 @@ function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
           display: "inline-flex",
         }}
       >
-        <IconFile />
+        <FileIcon size={11} />
       </span>
       <span
         style={{

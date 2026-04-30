@@ -6,7 +6,7 @@ import { useUIStore } from "@/store/uiStore";
 import { useVaultStore } from "@/store/vaultStore";
 import { Mark, Kbd } from "@/components/ui/atoms";
 import FileTree from "./FileTree";
-
+import { Search, Pencil, House, Share2, Plus, Settings } from "lucide-react";
 const TAGS = [
   { name: "ai", count: 24 },
   { name: "pkm", count: 18 },
@@ -16,102 +16,10 @@ const TAGS = [
   { name: "daily", count: 31 },
 ];
 
-// Lucide-style inline SVG icons
-const IconEdit = ({ size = 13 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 21h4l11-11-4-4L4 17Z" />
-    <path d="m14 6 4 4" />
-  </svg>
-);
-const IconHome = ({ size = 13 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="m3 11 9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H10v7H6a2 2 0 0 1-2-2Z" />
-  </svg>
-);
-const IconGraph = ({ size = 13 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="6" cy="6" r="2" />
-    <circle cx="18" cy="6" r="2" />
-    <circle cx="12" cy="18" r="2" />
-    <path d="M7.5 7.5 11 16M16.5 7.5 13 16" />
-  </svg>
-);
-const IconSearch = ({ size = 12 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.6"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="11" cy="11" r="7" />
-    <path d="m20 20-3.5-3.5" />
-  </svg>
-);
-const IconPlus = ({ size = 11 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.6"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-);
-const IconGear = ({ size = 13 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.4"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.7l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.7-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.7.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.7 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.7.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.7-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.7 1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z" />
-  </svg>
-);
-
 const NAV = [
-  { id: "editor", label: "Editor", icon: IconEdit, kbd: "⌘E" },
-  { id: "dashboard", label: "Dashboard", icon: IconHome, kbd: "⌘D" },
-  { id: "graph", label: "Graph", icon: IconGraph, kbd: "⌘G" },
+  { id: "editor", label: "Editor", icon: Pencil, kbd: "⌘E" },
+  { id: "dashboard", label: "Dashboard", icon: House, kbd: "⌘D" },
+  { id: "graph", label: "Graph", icon: Share2, kbd: "⌘G" },
 ] as const;
 
 export default function AppSidebar() {
@@ -218,7 +126,7 @@ export default function AppSidebar() {
             cursor: "pointer",
           }}
         >
-          <IconSearch size={12} />
+          <Search size={12} />
           <span style={{ flex: 1 }}>Search vault</span>
           <Kbd>⌘K</Kbd>
         </div>
@@ -240,7 +148,7 @@ export default function AppSidebar() {
       >
         <span>Vault</span>
         <span style={{ color: "var(--m-text-3)", cursor: "pointer" }}>
-          <IconPlus size={11} />
+          <Plus size={11} />
         </span>
       </div>
       <FileTree />
@@ -335,7 +243,7 @@ export default function AppSidebar() {
           }}
           style={{ color: "var(--m-text-3)", cursor: "pointer" }}
         >
-          <IconGear size={13} />
+          <Settings size={13} />
         </span>
       </div>
     </aside>
