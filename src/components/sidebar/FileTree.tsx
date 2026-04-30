@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "@tanstack/react-router";
 import { useVaultStore } from "@/store/vaultStore";
+import { useUIStore } from "@/store/uiStore";
 import { buildTree, VaultNode, FolderNode, NoteNode } from "@/lib/vault/tree";
 
 const IconChevRight = () => (
@@ -65,10 +66,25 @@ const IconFile = () => (
 
 function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
   const [open, setOpen] = useState(depth === 0);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const isExpandRequested = useUIStore((s) => s.expandedDirs.has(node.path));
+  const isFocused = useUIStore((s) => s.focusedDir === node.path);
+
+  useEffect(() => {
+    if (isExpandRequested) setOpen(true);
+  }, [isExpandRequested]);
+
+  useEffect(() => {
+    if (isFocused) {
+      setOpen(true);
+      headerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isFocused]);
 
   return (
     <div>
       <div
+        ref={headerRef}
         onClick={() => setOpen((o) => !o)}
         style={{
           display: "flex",
@@ -79,6 +95,13 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
           fontSize: 12,
           cursor: "pointer",
           borderRadius: 4,
+          background: isFocused
+            ? "color-mix(in oklch, var(--m-accent) 12%, transparent)"
+            : "transparent",
+          outline: isFocused
+            ? "1px solid color-mix(in oklch, var(--m-accent) 50%, transparent)"
+            : "none",
+          outlineOffset: -1,
         }}
       >
         <span style={{ color: "var(--m-text-4)", display: "inline-flex" }}>
@@ -99,11 +122,13 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
 
 function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
   const { activeNoteId, setActiveNote } = useVaultStore();
+  const { clearFocusedDir } = useUIStore();
   const navigate = useNavigate();
   const active = activeNoteId === node.path;
 
   const handleClick = () => {
     setActiveNote(node.path);
+    clearFocusedDir();
     navigate({
       to: "/editor/$noteId",
       params: { noteId: encodeURIComponent(node.path) },

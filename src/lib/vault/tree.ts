@@ -7,6 +7,7 @@ export interface NoteNode {
 export interface FolderNode {
   kind: 'folder';
   name: string;
+  path: string;
   children: VaultNode[];
 }
 
@@ -18,14 +19,16 @@ export function buildTree(paths: string[]): VaultNode[] {
   for (const path of paths) {
     const parts = path.split('/');
     let nodes = root;
+    let currentPath = '';
 
     for (let i = 0; i < parts.length - 1; i++) {
       const segment = parts[i];
+      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
       let folder = nodes.find(
         (n): n is FolderNode => n.kind === 'folder' && n.name === segment,
       );
       if (!folder) {
-        folder = { kind: 'folder', name: segment, children: [] };
+        folder = { kind: 'folder', name: segment, path: currentPath, children: [] };
         nodes.push(folder);
       }
       nodes = folder.children;
