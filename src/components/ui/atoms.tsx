@@ -12,6 +12,7 @@ export function Mark({ size = 18, color }: { size?: number; color?: string }) {
       strokeWidth="1.4"
       strokeLinecap="round"
     >
+      <title>Mimisbrunnr Logo</title>
       <circle cx="12" cy="12" r="9" opacity="0.35" />
       <circle cx="12" cy="12" r="6" opacity="0.65" />
       <circle cx="12" cy="12" r="2.5" />
