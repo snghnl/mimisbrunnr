@@ -1,0 +1,13 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <title>Mimisbrunnr Logo - Black Background</title>
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="black" />
+
+  <!-- Logo centered with ~10% padding on each side (artwork within ~819px, centered at 512,512) -->
+  <g fill="none" stroke="#FFB340" stroke-linecap="round" transform="translate(512,512)">
+    <circle r="368" opacity="0.35" stroke-width="46" />
+    <circle r="245" opacity="0.65" stroke-width="46" />
+    <circle r="102" stroke-width="46" />
+    <circle r="33" fill="#FFB340" stroke="none" />
+  </g>
+</svg>
