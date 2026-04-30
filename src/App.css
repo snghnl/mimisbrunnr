@@ -47,6 +47,13 @@
 .m-scroll::-webkit-scrollbar-track  { background: transparent; }
 .m-scroll::-webkit-scrollbar-thumb  { background: var(--m-line); border-radius: 3px; }
 
+.cm-wikilink {
+  color: var(--m-accent);
+  border-bottom: 1px dashed color-mix(in oklch, var(--m-accent) 50%, transparent);
+  padding: 0 1px;
+  cursor: pointer;
+}
+
 @utility mono-label {
   font-family: var(--m-mono);
   font-size: 10.5px;
