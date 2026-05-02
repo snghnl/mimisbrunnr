@@ -1,10 +1,12 @@
 import { Dot } from "@/components/ui/atoms";
+import { useEditorStore } from "@/store/editorStore";
 
 interface StatusBarProps {
   statusMeta: string;
 }
 
 export default function StatusBar({ statusMeta }: StatusBarProps) {
+  const cursor = useEditorStore((s) => s.cursor);
   return (
     <div
       style={{
@@ -32,7 +34,7 @@ export default function StatusBar({ statusMeta }: StatusBarProps) {
       >
         <span>md</span>
         <span>UTF-8</span>
-        <span>Ln 24, Col 41</span>
+        <span>{cursor ? `Ln ${cursor.line}, Col ${cursor.col}` : "Ln –, Col –"}</span>
         <span
           style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
         >

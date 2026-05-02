@@ -3,6 +3,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useVaultStore } from "@/store/vaultStore";
+import { useEditorStore } from "@/store/editorStore";
 import BreadCrumb from "./components/BreadCrumb.components";
 import WikiPopover from "./components/WikiPopover.components";
 import SlashMenu from "./components/SlashMenu.components";
@@ -19,6 +20,9 @@ interface Props {
 export default function Editor({ noteId }: Props) {
   const { vaultPath } = useVaultStore();
   const queryClient = useQueryClient();
+  const setCursor = useEditorStore((s) => s.setCursor);
+
+  useEffect(() => () => setCursor(null), [setCursor]);
   const [slashOpen, setSlash] = useState(false);
   const [wikiOpen, setWiki] = useState(false);
 

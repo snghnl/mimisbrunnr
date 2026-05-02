@@ -4,6 +4,7 @@ import { EditorState } from "@codemirror/state";
 import { mimisbrunnrTheme } from "./extensions/theme";
 import { markdownExtensions } from "./extensions/markdown";
 import { wikilinkExtensions } from "./extensions/wikilink";
+import { useEditorStore } from "@/store/editorStore";
 
 interface Props {
   value: string;
@@ -20,6 +21,7 @@ export default function CodeMirrorEditor({
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onWikilinkClickRef = useRef(onWikilinkClick);
+  const setCursor = useEditorStore((s) => s.setCursor);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -41,6 +43,11 @@ export default function CodeMirrorEditor({
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               onChangeRef.current?.(update.state.doc.toString());
+            }
+            if (update.docChanged || update.selectionSet) {
+              const head = update.state.selection.main.head;
+              const line = update.state.doc.lineAt(head);
+              setCursor({ line: line.number, col: head - line.from + 1 });
             }
           }),
         ],

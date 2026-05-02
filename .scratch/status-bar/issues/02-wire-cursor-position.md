@@ -1,6 +1,6 @@
 # 02 — Wire real cursor position (Ln / Col) from CodeMirror
 
-Status: needs-triage
+Status: done
 Blocked by: 01-extract-statusbar-component.md
 
 ## What to build
@@ -9,10 +9,10 @@ Extend `editorStore` with a `cursor: { line: number; col: number }` field. Add a
 
 ## Acceptance criteria
 
-- [ ] `editorStore` exposes `cursor: { line: number; col: number }` and `setCursor()`
-- [ ] Moving the caret in the editor updates the store
-- [ ] StatusBar displays the live line/col, updating on every cursor move
-- [ ] When no note is open, StatusBar shows a neutral fallback (e.g. `Ln –, Col –`)
+- [x] `editorStore` exposes `cursor: { line: number; col: number }` and `setCursor()`
+- [x] Moving the caret in the editor updates the store
+- [x] StatusBar displays the live line/col, updating on every cursor move
+- [x] When no note is open, StatusBar shows a neutral fallback (e.g. `Ln –, Col –`)
 
 ## Blocked by
 
