@@ -10,6 +10,7 @@ import { Mark, AIStatusPill, Dot, Kbd } from "@/components/ui/atoms";
 import AppSidebar from "@/components/sidebar/Sidebar";
 import AgentPanel from "@/components/agent/AgentPanel";
 import TabBar from "@/components/layout/TabBar";
+import StatusBar from "@/components/layout/StatusBar";
 import Editor from "@/components/editor/Editor";
 import Dashboard from "@/components/dashboard/Dashboard";
 import GraphView from "@/components/graph/GraphView";
@@ -530,40 +531,7 @@ export default function AppShell() {
         </div>
 
         {/* Status bar */}
-        <div
-          style={{
-            height: 24,
-            padding: "0 14px",
-            borderTop: "1px solid var(--m-line-soft)",
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            fontFamily: "var(--m-mono)",
-            fontSize: 10.5,
-            color: "var(--m-text-4)",
-            background: "var(--m-bg)",
-            flexShrink: 0,
-          }}
-        >
-          <span>{statusMeta}</span>
-          <span
-            style={{
-              marginLeft: "auto",
-              display: "inline-flex",
-              gap: 14,
-              alignItems: "center",
-            }}
-          >
-            <span>md</span>
-            <span>UTF-8</span>
-            <span>Ln 24, Col 41</span>
-            <span
-              style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-            >
-              <Dot color="var(--m-ai)" pulse /> indexed
-            </span>
-          </span>
-        </div>
+        <StatusBar statusMeta={statusMeta} />
       </main>
 
       {aiPanelOpen && <AgentPanel onClose={() => setAiPanelOpen(false)} />}
