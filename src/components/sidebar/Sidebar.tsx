@@ -1,4 +1,3 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -23,9 +22,7 @@ const NAV = [
 ] as const;
 
 export default function AppSidebar() {
-  const navigate = useNavigate();
-  const { location } = useRouterState();
-  const { setCommandPaletteOpen } = useUIStore();
+  const { setCommandPaletteOpen, openTab, tabs, activeTabId } = useUIStore();
   const { vaultPath, setVaultPath } = useVaultStore();
 
   const { data: paths = [] } = useQuery({
@@ -36,11 +33,15 @@ export default function AppSidebar() {
 
   const vaultName = vaultPath?.split("/").pop() ?? "no vault";
 
-  const activeView = location.pathname.startsWith("/editor")
-    ? "editor"
-    : location.pathname === "/graph"
-      ? "graph"
-      : "dashboard";
+  const activeTab = tabs.find((t) => t.id === activeTabId);
+  const activeView =
+    activeTab?.type === "note"
+      ? "editor"
+      : activeTab?.type === "graph"
+        ? "graph"
+        : activeTab?.type === "dashboard"
+          ? "dashboard"
+          : null;
 
   return (
     <aside
@@ -65,20 +66,20 @@ export default function AppSidebar() {
         }}
       >
         {NAV.map((t) => {
-          const active = activeView === t.id;
+          const active = activeView !== null && activeView === t.id;
           const Icon = t.icon;
           return (
             <button
               type="button"
               key={t.id}
-              onClick={() => {
-                if (t.id === "editor")
-                  navigate({
-                    to: "/editor/$noteId",
-                    params: { noteId: "i-comp" },
-                  });
-                else if (t.id === "graph") navigate({ to: "/graph" });
-                else navigate({ to: "/" });
+              onClick={(e) => {
+                if (t.id === "editor") {
+                  setCommandPaletteOpen(true);
+                } else if (t.id === "graph") {
+                  openTab({ type: "graph" }, e.metaKey || e.ctrlKey);
+                } else {
+                  openTab({ type: "dashboard" }, e.metaKey || e.ctrlKey);
+                }
               }}
               style={{
                 display: "flex",
