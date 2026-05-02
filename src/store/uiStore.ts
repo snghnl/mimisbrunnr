@@ -45,22 +45,25 @@ export const useUIStore = create<UIStore>()(
       activeTabId: null,
       openTab: (tabDef: TabInput, force = false) =>
         set((state) => {
-          if (!force) {
-            const existing = state.tabs.find((t) => {
-              if (tabDef.type === "note" && t.type === "note")
-                return t.noteId === tabDef.noteId;
-              return t.type === tabDef.type;
-            });
-            if (existing) return { activeTabId: existing.id };
+          if (force || state.tabs.length === 0 || state.activeTabId === null) {
+            const id = crypto.randomUUID();
+            const newTab: Tab =
+              tabDef.type === "note"
+                ? { type: "note", id, noteId: tabDef.noteId, title: tabDef.title }
+                : tabDef.type === "dashboard"
+                  ? { type: "dashboard", id }
+                  : { type: "graph", id };
+            return { tabs: [...state.tabs, newTab], activeTabId: id };
           }
-          const id = crypto.randomUUID();
-          const newTab: Tab =
-            tabDef.type === "note"
-              ? { type: "note", id, noteId: tabDef.noteId, title: tabDef.title }
-              : tabDef.type === "dashboard"
-                ? { type: "dashboard", id }
-                : { type: "graph", id };
-          return { tabs: [...state.tabs, newTab], activeTabId: id };
+          const updatedTabs = state.tabs.map((t) => {
+            if (t.id !== state.activeTabId) return t;
+            if (tabDef.type === "note")
+              return { type: "note" as const, id: t.id, noteId: tabDef.noteId, title: tabDef.title };
+            if (tabDef.type === "dashboard")
+              return { type: "dashboard" as const, id: t.id };
+            return { type: "graph" as const, id: t.id };
+          });
+          return { tabs: updatedTabs };
         }),
       closeTab: (id) =>
         set((state) => {
