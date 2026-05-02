@@ -69,6 +69,9 @@ body {
   font-family: var(--m-sans) !important;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Prevent macOS WebKit from treating the body as a window drag region */
+  -webkit-app-region: no-drag;
+  overflow: hidden;
 }
 
 ::selection {
