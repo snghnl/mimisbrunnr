@@ -36,8 +36,8 @@ export default function Editor({ noteId }: Props) {
   const { mutate: saveNote } = useMutation({
     mutationFn: (contentToSave: string) =>
       invoke<void>("write_note", { path: fullPath!, content: contentToSave }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["note", fullPath] }),
+    onSuccess: (_, contentToSave) =>
+      queryClient.setQueryData(["note", fullPath], contentToSave),
   });
 
   // Keep ref in sync when the query delivers fresh data

@@ -55,7 +55,7 @@ export default function CodeMirrorEditor({
     };
     // intentionally empty — editor initializes once with initial value
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  });
+  }, []);
 
   return <div ref={containerRef} style={{ width: "100%" }} />;
 }
