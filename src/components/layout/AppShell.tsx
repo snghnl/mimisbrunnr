@@ -428,9 +428,6 @@ export default function AppShell() {
   }, [activeTabId, tabs, setActiveNote]);
 
   const isEditorView = location.pathname.startsWith("/editor");
-  const statusMeta = isEditorView
-    ? "1,247 words · ~6 min read · saved 2m ago"
-    : "";
 
   const mainContent = !vaultPath ? (
     <VaultWelcome mode="onboarding" />
@@ -531,7 +528,7 @@ export default function AppShell() {
         </div>
 
         {/* Status bar */}
-        <StatusBar statusMeta={statusMeta} />
+        <StatusBar />
       </main>
 
       {aiPanelOpen && <AgentPanel onClose={() => setAiPanelOpen(false)} />}

@@ -21,8 +21,14 @@ export default function Editor({ noteId }: Props) {
   const { vaultPath } = useVaultStore();
   const queryClient = useQueryClient();
   const setCursor = useEditorStore((s) => s.setCursor);
+  const setWordCount = useEditorStore((s) => s.setWordCount);
+  const setLastSavedAt = useEditorStore((s) => s.setLastSavedAt);
 
-  useEffect(() => () => setCursor(null), [setCursor]);
+  useEffect(() => () => {
+    setCursor(null);
+    setWordCount(null);
+    setLastSavedAt(null);
+  }, [setCursor, setWordCount, setLastSavedAt]);
   const [slashOpen, setSlash] = useState(false);
   const [wikiOpen, setWiki] = useState(false);
 
@@ -40,14 +46,19 @@ export default function Editor({ noteId }: Props) {
   const { mutate: saveNote } = useMutation({
     mutationFn: (contentToSave: string) =>
       invoke<void>("write_note", { path: fullPath!, content: contentToSave }),
-    onSuccess: (_, contentToSave) =>
-      queryClient.setQueryData(["note", fullPath], contentToSave),
+    onSuccess: (_, contentToSave) => {
+      queryClient.setQueryData(["note", fullPath], contentToSave);
+      setLastSavedAt(new Date());
+    },
   });
 
   // Keep ref in sync when the query delivers fresh data
   useEffect(() => {
-    if (data !== undefined) contentRef.current = data;
-  }, [data]);
+    if (data !== undefined) {
+      contentRef.current = data;
+      setWordCount(data.trim() ? data.trim().split(/\s+/).length : 0);
+    }
+  }, [data, setWordCount]);
 
   // Flush pending auto-save before switching notes to prevent data loss
   useEffect(() => {
@@ -78,6 +89,7 @@ export default function Editor({ noteId }: Props) {
 
   const handleChange = (val: string) => {
     contentRef.current = val;
+    setWordCount(val.trim() ? val.trim().split(/\s+/).length : 0);
     if (saveTimerRef.current !== null) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       saveTimerRef.current = null;
