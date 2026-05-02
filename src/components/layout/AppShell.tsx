@@ -8,6 +8,10 @@ import { useVaultStore } from "@/store/vaultStore";
 import { Mark, AIStatusPill, Dot, Kbd } from "@/components/ui/atoms";
 import AppSidebar from "@/components/sidebar/Sidebar";
 import AgentPanel from "@/components/agent/AgentPanel";
+import TabBar from "@/components/layout/TabBar";
+import Editor from "@/components/editor/Editor";
+import Dashboard from "@/components/dashboard/Dashboard";
+import GraphView from "@/components/graph/GraphView";
 import { Search, PanelRight } from "lucide-react";
 
 interface CmdItem {
@@ -406,6 +410,8 @@ export default function AppShell() {
     setAiPanelOpen,
     commandPaletteOpen,
     setCommandPaletteOpen,
+    tabs,
+    activeTabId,
   } = useUIStore();
   const { vaultPath, activeNoteId } = useVaultStore();
   const { location } = useRouterState();
@@ -429,6 +435,23 @@ export default function AppShell() {
 
   const mainContent = !vaultPath ? (
     <VaultWelcome mode="onboarding" />
+  ) : tabs.length > 0 ? (
+    <>
+      {tabs.map((tab) => (
+        <div
+          key={tab.id}
+          style={{
+            display: tab.id === activeTabId ? "flex" : "none",
+            flex: 1,
+            overflow: "hidden",
+          }}
+        >
+          {tab.type === "note" && <Editor noteId={tab.noteId} />}
+          {tab.type === "dashboard" && <Dashboard />}
+          {tab.type === "graph" && <GraphView />}
+        </div>
+      ))}
+    </>
   ) : !activeNoteId && !isEditorView ? (
     <VaultWelcome mode="file-picker" />
   ) : (
@@ -503,6 +526,7 @@ export default function AppShell() {
           minWidth: 0,
         }}
       >
+        {vaultPath && tabs.length > 0 && <TabBar />}
         <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
           {mainContent}
         </div>
