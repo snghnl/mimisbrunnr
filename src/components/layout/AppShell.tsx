@@ -501,7 +501,7 @@ export default function AppShell() {
           }}
         >
           <Mark size={13} />
-          mimisbrunnr · vault
+          mimisbrunnr · {vaultPath?.split("/").pop() ?? "no vault"}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <AIStatusPill state="thinking" text="2 agents working" />

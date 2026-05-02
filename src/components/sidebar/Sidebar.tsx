@@ -147,7 +147,7 @@ export default function AppSidebar() {
           justifyContent: "space-between",
         }}
       >
-        <span>Vault</span>
+        <span>{vaultName}</span>
         <span style={{ color: "var(--m-text-3)", cursor: "pointer" }}>
           <Plus size={11} />
         </span>
