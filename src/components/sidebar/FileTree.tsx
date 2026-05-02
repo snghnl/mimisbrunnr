@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useNavigate } from "@tanstack/react-router";
 import { useVaultStore } from "@/store/vaultStore";
 import { useUIStore } from "@/store/uiStore";
 import { buildTree, VaultNode, FolderNode, NoteNode } from "@/lib/vault/tree";
@@ -76,18 +75,15 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
 }
 
 function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
-  const { activeNoteId, setActiveNote } = useVaultStore();
-  const { clearFocusedDir } = useUIStore();
-  const navigate = useNavigate();
+  const { activeNoteId } = useVaultStore();
+  const { clearFocusedDir, openTab } = useUIStore();
   const active = activeNoteId === node.path;
 
-  const handleClick = () => {
-    setActiveNote(node.path);
+  const handleClick = (e: React.MouseEvent) => {
+    const force = e.metaKey || e.ctrlKey;
+    const title = node.name.replace(/\.md$/, "");
     clearFocusedDir();
-    navigate({
-      to: "/editor/$noteId",
-      params: { noteId: encodeURIComponent(node.path) },
-    });
+    openTab({ type: "note", noteId: node.path, title }, force);
   };
 
   return (

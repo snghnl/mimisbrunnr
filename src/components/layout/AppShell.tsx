@@ -27,7 +27,8 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { vaultPath, setActiveNote } = useVaultStore();
+  const { vaultPath } = useVaultStore();
+  const { openTab } = useUIStore();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -46,11 +47,8 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
       ? `${path.split("/").slice(0, -1).join("/")}/`
       : undefined,
     action: () => {
-      setActiveNote(path);
-      navigate({
-        to: "/editor/$noteId",
-        params: { noteId: encodeURIComponent(path) },
-      });
+      const title = path.split("/").pop()?.replace(/\.md$/, "") ?? path;
+      openTab({ type: "note", noteId: path, title });
       onClose();
     },
   }));
@@ -413,8 +411,17 @@ export default function AppShell() {
     tabs,
     activeTabId,
   } = useUIStore();
-  const { vaultPath, activeNoteId } = useVaultStore();
+  const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
   const { location } = useRouterState();
+
+  useEffect(() => {
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+    if (activeTab?.type === "note") {
+      setActiveNote(activeTab.noteId);
+    } else if (!activeTab) {
+      setActiveNote(null);
+    }
+  }, [activeTabId, tabs, setActiveNote]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

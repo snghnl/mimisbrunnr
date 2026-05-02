@@ -1,6 +1,6 @@
 # 02 — Note tabs wired to FileTree and Command Palette
 
-Status: needs-triage
+Status: ready-for-human
 Type: AFK
 Blocked by: 01-tab-data-model-and-tab-bar
 
