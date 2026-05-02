@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useGlobalHotkeys } from "@/hooks/useGlobalHotkeys";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
@@ -414,6 +415,8 @@ export default function AppShell() {
   const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
   const { location } = useRouterState();
 
+  useGlobalHotkeys();
+
   useEffect(() => {
     const activeTab = tabs.find((t) => t.id === activeTabId);
     if (activeTab?.type === "note") {
@@ -422,18 +425,6 @@ export default function AppShell() {
       setActiveNote(null);
     }
   }, [activeTabId, tabs, setActiveNote]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setCommandPaletteOpen(true);
-      }
-      if (e.key === "Escape") setCommandPaletteOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [setCommandPaletteOpen]);
 
   const isEditorView = location.pathname.startsWith("/editor");
   const statusMeta = isEditorView

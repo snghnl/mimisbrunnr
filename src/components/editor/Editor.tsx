@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useVaultStore } from "@/store/vaultStore";
@@ -56,21 +57,20 @@ export default function Editor({ noteId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId]);
 
-  // Cmd+S / Ctrl+S — immediate save
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        if (saveTimerRef.current !== null) {
-          clearTimeout(saveTimerRef.current);
-          saveTimerRef.current = null;
-        }
-        saveNote(contentRef.current);
+  // Cmd+S / Ctrl+S — immediate save (stays in Editor; save callback is local)
+  useHotkeys(
+    "meta+s, ctrl+s",
+    (e) => {
+      e.preventDefault();
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
       }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [saveNote]);
+      saveNote(contentRef.current);
+    },
+    { enableOnContentEditable: true, enableOnFormTags: true },
+    [saveNote],
+  );
 
   const handleChange = (val: string) => {
     contentRef.current = val;
