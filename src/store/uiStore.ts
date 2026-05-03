@@ -23,6 +23,7 @@ interface UIStore {
   closeTab: (id: string) => void;
   setActiveTabId: (id: string) => void;
   updateNoteTab: (oldNoteId: string, newNoteId: string, newTitle: string) => void;
+  renameDirTabs: (oldPrefix: string, newPrefix: string) => void;
   closeOthers: (id: string) => void;
   closeToTheRight: (id: string) => void;
 }
@@ -99,6 +100,14 @@ export const useUIStore = create<UIStore>()(
           tabs: state.tabs.map((t) =>
             t.type === "note" && t.noteId === oldNoteId
               ? { ...t, noteId: newNoteId, title: newTitle }
+              : t
+          ),
+        })),
+      renameDirTabs: (oldPrefix, newPrefix) =>
+        set((state) => ({
+          tabs: state.tabs.map((t) =>
+            t.type === "note" && t.noteId.startsWith(oldPrefix + "/")
+              ? { ...t, noteId: newPrefix + t.noteId.slice(oldPrefix.length) }
               : t
           ),
         })),

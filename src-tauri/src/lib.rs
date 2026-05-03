@@ -19,6 +19,9 @@ pub fn run() {
             commands::fs::write_note,
             commands::fs::delete_note,
             commands::fs::rename_note,
+            commands::fs::create_note_in_dir,
+            commands::fs::rename_dir,
+            commands::fs::delete_dir,
             commands::fs::list_dir,
             commands::fs::home_dir,
         ])

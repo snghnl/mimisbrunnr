@@ -31,9 +31,17 @@ import {
 
 function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
   const [open, setOpen] = useState(depth === 0);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
   const isExpandRequested = useUIStore((s) => s.expandedDirs.has(node.path));
   const isFocused = useUIStore((s) => s.focusedDir === node.path);
+  const { openTab, tabs, closeTab, renameDirTabs } = useUIStore();
+  const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (isExpandRequested) setOpen(true);
@@ -42,53 +50,168 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
   useEffect(() => {
     if (isFocused) {
       setOpen(true);
-      headerRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+      headerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [isFocused]);
 
-  return (
-    <div>
-      <div
-        ref={headerRef}
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: `4px 9px 4px ${9 + depth * 12}px`,
-          color: "var(--m-text-2)",
-          fontSize: 12,
-          cursor: "pointer",
-          borderRadius: 4,
-          background: isFocused
-            ? "color-mix(in oklch, var(--m-accent) 12%, transparent)"
-            : "transparent",
-          outline: isFocused
-            ? "1px solid color-mix(in oklch, var(--m-accent) 50%, transparent)"
-            : "none",
-          outlineOffset: -1,
-        }}
-      >
-        <span style={{ color: "var(--m-text-4)", display: "inline-flex" }}>
-          {open ? (
-            <ChevronDownIcon size={11} />
-          ) : (
-            <ChevronRightIcon size={11} />
-          )}
-        </span>
-        <span style={{ color: "var(--m-text-3)" }}>
-          <FolderIcon size={11} />
-        </span>
+  useEffect(() => {
+    if (renaming) renameInputRef.current?.select();
+  }, [renaming]);
+
+  const handleNewNote = async () => {
+    if (!vaultPath) return;
+    const dirFullPath = `${vaultPath}/${node.path}`;
+    const newFullPath = await invoke<string>("create_note_in_dir", {
+      dirPath: dirFullPath,
+      title: "Untitled",
+    });
+    const relPath = newFullPath.slice(vaultPath.length + 1);
+    const title = relPath.split("/").pop()!.replace(/\.md$/, "");
+    setOpen(true);
+    openTab({ type: "note", noteId: relPath, title }, true);
+    setActiveNote(relPath);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+  };
+
+  const startRename = () => {
+    setRenameValue(node.name);
+    setRenaming(true);
+  };
+
+  const commitRename = async () => {
+    const name = renameValue.trim();
+    if (!name || name === node.name) {
+      setRenaming(false);
+      return;
+    }
+    if (!vaultPath) { setRenaming(false); return; }
+    const dir = node.path.includes("/")
+      ? node.path.slice(0, node.path.lastIndexOf("/"))
+      : null;
+    const newRelPath = dir ? `${dir}/${name}` : name;
+    const oldFullPath = `${vaultPath}/${node.path}`;
+    const newFullPath = `${vaultPath}/${newRelPath}`;
+    await invoke("rename_dir", { oldPath: oldFullPath, newPath: newFullPath });
+    renameDirTabs(node.path, newRelPath);
+    if (activeNoteId?.startsWith(node.path + "/")) {
+      setActiveNote(newRelPath + activeNoteId.slice(node.path.length));
+    }
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+    setRenaming(false);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitRename();
+    } else if (e.key === "Escape") {
+      setRenaming(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!vaultPath) return;
+    const fullPath = `${vaultPath}/${node.path}`;
+    await invoke("delete_dir", { path: fullPath });
+    tabs
+      .filter((t) => t.type === "note" && t.noteId.startsWith(node.path + "/"))
+      .forEach((t) => closeTab(t.id));
+    if (activeNoteId?.startsWith(node.path + "/")) setActiveNote(null);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+    setDeleteOpen(false);
+  };
+
+  const headerStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: `4px 9px 4px ${9 + depth * 12}px`,
+    color: "var(--m-text-2)",
+    fontSize: 12,
+    cursor: "pointer",
+    borderRadius: 4,
+    background: isFocused
+      ? "color-mix(in oklch, var(--m-accent) 12%, transparent)"
+      : "transparent",
+    outline: isFocused
+      ? "1px solid color-mix(in oklch, var(--m-accent) 50%, transparent)"
+      : "none",
+    outlineOffset: -1,
+  };
+
+  const header = (
+    <div
+      ref={headerRef}
+      onClick={renaming ? undefined : () => setOpen((o) => !o)}
+      style={headerStyle}
+    >
+      <span style={{ color: "var(--m-text-4)", display: "inline-flex" }}>
+        {open ? <ChevronDownIcon size={11} /> : <ChevronRightIcon size={11} />}
+      </span>
+      <span style={{ color: "var(--m-text-3)" }}>
+        <FolderIcon size={11} />
+      </span>
+      {renaming ? (
+        <input
+          ref={renameInputRef}
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          onKeyDown={handleRenameKeyDown}
+          onBlur={commitRename}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "1px solid var(--m-accent)",
+            outlineOffset: 1,
+            borderRadius: 2,
+            color: "var(--m-text)",
+            fontSize: 12,
+            fontFamily: "inherit",
+            padding: "0 2px",
+            minWidth: 0,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
         <span style={{ flex: 1 }}>{node.name}</span>
-      </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{header}</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={handleNewNote}>New Note Inside</ContextMenuItem>
+          <ContextMenuItem onSelect={startRename}>Rename</ContextMenuItem>
+          <ContextMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+            Delete Folder
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete folder?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{node.name}&rdquo; and all notes inside will be permanently deleted from disk.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {open &&
         node.children.map((child, i) => (
           <VaultNodeItem key={i} node={child} depth={depth + 1} />
         ))}
-    </div>
+    </>
   );
 }
 

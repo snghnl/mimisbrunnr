@@ -134,6 +134,47 @@ pub fn rename_note(old_path: String, new_path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to rename {} to {}: {}", old_path, new_path, e))
 }
 
+#[tauri::command]
+pub fn create_note_in_dir(dir_path: String, title: String) -> Result<String, String> {
+    let dir = Path::new(&dir_path);
+    if !dir.exists() || !dir.is_dir() {
+        return Err(format!("Directory does not exist: {}", dir_path));
+    }
+    let mut candidate = dir.join(format!("{}.md", title));
+    let mut counter = 2u32;
+    while candidate.exists() {
+        candidate = dir.join(format!("{} {}.md", title, counter));
+        counter += 1;
+    }
+    let full_path = candidate.to_string_lossy().into_owned();
+    fs::write(&candidate, "").map_err(|e| format!("Failed to create note: {}", e))?;
+    Ok(full_path)
+}
+
+#[tauri::command]
+pub fn rename_dir(old_path: String, new_path: String) -> Result<(), String> {
+    let src = Path::new(&old_path);
+    let dst = Path::new(&new_path);
+    if !src.exists() {
+        return Err(format!("Directory does not exist: {}", old_path));
+    }
+    if dst.exists() {
+        return Err(format!("Target already exists: {}", new_path));
+    }
+    fs::rename(&old_path, &new_path)
+        .map_err(|e| format!("Failed to rename {} to {}: {}", old_path, new_path, e))
+}
+
+#[tauri::command]
+pub fn delete_dir(path: String) -> Result<(), String> {
+    let dir = Path::new(&path);
+    if !dir.exists() {
+        return Err(format!("Directory does not exist: {}", path));
+    }
+    fs::remove_dir_all(&path)
+        .map_err(|e| format!("Failed to delete directory {}: {}", path, e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,5 +239,115 @@ mod tests {
         assert!(result.unwrap_err().contains("already exists"));
         fs::remove_file(&src).unwrap();
         fs::remove_file(&dst).unwrap();
+    }
+
+    #[test]
+    fn test_create_note_in_dir_success() {
+        let tmp = std::env::temp_dir().join("mimisbrunnr_create_note_test_dir");
+        fs::create_dir_all(&tmp).unwrap();
+        let result = create_note_in_dir(
+            tmp.to_string_lossy().into_owned(),
+            "TestNote".to_string(),
+        );
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        assert!(Path::new(&path).exists());
+        assert!(path.ends_with("TestNote.md"));
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn test_create_note_in_dir_unique_name() {
+        let tmp = std::env::temp_dir().join("mimisbrunnr_create_note_unique_dir");
+        fs::create_dir_all(&tmp).unwrap();
+        fs::write(tmp.join("Untitled.md"), "").unwrap();
+        let result = create_note_in_dir(
+            tmp.to_string_lossy().into_owned(),
+            "Untitled".to_string(),
+        );
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        assert!(path.ends_with("Untitled 2.md"));
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn test_create_note_in_dir_missing_dir() {
+        let tmp = std::env::temp_dir()
+            .join("mimisbrunnr_nonexistent_dir_99999")
+            .to_string_lossy()
+            .into_owned();
+        let result = create_note_in_dir(tmp, "Note".to_string());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not exist"));
+    }
+
+    #[test]
+    fn test_rename_dir_success() {
+        let tmp = std::env::temp_dir();
+        let src = tmp.join("mimisbrunnr_rename_dir_src");
+        let dst = tmp.join("mimisbrunnr_rename_dir_dst");
+        fs::create_dir_all(&src).unwrap();
+        let _ = fs::remove_dir_all(&dst);
+        let result = rename_dir(
+            src.to_string_lossy().into_owned(),
+            dst.to_string_lossy().into_owned(),
+        );
+        assert!(result.is_ok());
+        assert!(!src.exists());
+        assert!(dst.exists());
+        fs::remove_dir_all(&dst).unwrap();
+    }
+
+    #[test]
+    fn test_rename_dir_missing_source() {
+        let tmp = std::env::temp_dir();
+        let src = tmp.join("mimisbrunnr_rename_dir_missing_9999");
+        let dst = tmp.join("mimisbrunnr_rename_dir_dst2");
+        let _ = fs::remove_dir_all(&src);
+        let result = rename_dir(
+            src.to_string_lossy().into_owned(),
+            dst.to_string_lossy().into_owned(),
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not exist"));
+    }
+
+    #[test]
+    fn test_rename_dir_target_exists() {
+        let tmp = std::env::temp_dir();
+        let src = tmp.join("mimisbrunnr_rename_dir_src3");
+        let dst = tmp.join("mimisbrunnr_rename_dir_dst3");
+        fs::create_dir_all(&src).unwrap();
+        fs::create_dir_all(&dst).unwrap();
+        let result = rename_dir(
+            src.to_string_lossy().into_owned(),
+            dst.to_string_lossy().into_owned(),
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("already exists"));
+        fs::remove_dir_all(&src).unwrap();
+        fs::remove_dir_all(&dst).unwrap();
+    }
+
+    #[test]
+    fn test_delete_dir_success() {
+        let tmp = std::env::temp_dir().join("mimisbrunnr_delete_dir_test");
+        fs::create_dir_all(&tmp).unwrap();
+        fs::write(tmp.join("note.md"), "content").unwrap();
+        let result = delete_dir(tmp.to_string_lossy().into_owned());
+        assert!(result.is_ok());
+        assert!(!tmp.exists());
+    }
+
+    #[test]
+    fn test_delete_dir_missing() {
+        let tmp = std::env::temp_dir()
+            .join("mimisbrunnr_delete_dir_nonexistent_9999")
+            .to_string_lossy()
+            .into_owned();
+        let result = delete_dir(tmp);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not exist"));
     }
 }
