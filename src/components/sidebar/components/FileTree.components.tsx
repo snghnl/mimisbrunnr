@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useVaultStore } from "@/store/vaultStore";
 import { useUIStore } from "@/store/uiStore";
-import { buildTree, VaultNode, FolderNode, NoteNode } from "@/lib/vault/tree";
+import { buildTree } from "@/lib/vault/tree";
+import type { VaultNode, FolderNode, NoteNode } from "@/lib/vault/tree";
 import {
   ChevronRightIcon,
   ChevronDownIcon,
   FolderIcon,
   FileIcon,
+  Plus,
 } from "lucide-react";
 
 function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
@@ -134,6 +136,7 @@ function VaultNodeItem({ node, depth }: { node: VaultNode; depth: number }) {
 
 export default function FileTree() {
   const { vaultPath } = useVaultStore();
+  const vaultName = vaultPath?.split("/").pop() ?? "no vault";
 
   const { data: paths = [], isLoading } = useQuery({
     queryKey: ["vault", vaultPath],
@@ -160,17 +163,36 @@ export default function FileTree() {
       </div>
     );
   }
-
   const tree = buildTree(paths);
 
   return (
-    <div
-      className="m-scroll"
-      style={{ flex: 1, overflowY: "auto", padding: "0 6px" }}
-    >
-      {tree.map((node, i) => (
-        <VaultNodeItem key={i} node={node} depth={0} />
-      ))}
-    </div>
+    <>
+      <div
+        style={{
+          padding: "8px 9px 4px",
+          fontSize: 10.5,
+          fontFamily: "var(--m-mono)",
+          color: "var(--m-text-4)",
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>{vaultName}</span>
+        <span style={{ color: "var(--m-text-3)", cursor: "pointer" }}>
+          <Plus size={11} />
+        </span>
+      </div>
+      <div
+        className="m-scroll"
+        style={{ flex: 1, overflowY: "auto", padding: "0 6px" }}
+      >
+        {tree.map((node) => (
+          <VaultNodeItem key={node.path} node={node} depth={0} />
+        ))}
+      </div>
+    </>
   );
 }
