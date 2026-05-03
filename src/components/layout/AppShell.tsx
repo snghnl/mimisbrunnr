@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useGlobalHotkeys } from "@/hooks/useGlobalHotkeys";
-import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useQuery } from "@tanstack/react-query";
@@ -9,9 +8,9 @@ import { useVaultStore } from "@/store/vaultStore";
 import { Mark, AIStatusPill, Dot, Kbd } from "@/components/ui/atoms";
 import AppSidebar from "@/components/sidebar/Sidebar";
 import AgentPanel from "@/components/agent/AgentPanel";
-import TabBar from "@/components/layout/TabBar";
-import StatusBar from "@/components/layout/StatusBar";
+import { TabBar, StatusBar } from "@/components/layout/components";
 import Editor from "@/components/editor/Editor";
+import { useCreateNote } from "@/hooks/useCreateNote";
 import Dashboard from "@/components/dashboard/Dashboard";
 import GraphView from "@/components/graph/GraphView";
 import { Search, PanelRight } from "lucide-react";
@@ -28,9 +27,9 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
   const { vaultPath } = useVaultStore();
   const { openTab } = useUIStore();
+  const createNote = useCreateNote();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -61,7 +60,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
       label: "New note",
       hint: "Create blank note",
       action: () => {
-        navigate({ to: "/editor/$noteId", params: { noteId: "new" } });
+        createNote();
         onClose();
       },
     },
@@ -71,7 +70,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
       hint: "Today's digest",
       kbd: "⌘D",
       action: () => {
-        navigate({ to: "/" });
+        openTab({ type: "dashboard" });
         onClose();
       },
     },
@@ -81,7 +80,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
       hint: "Knowledge map",
       kbd: "⌘G",
       action: () => {
-        navigate({ to: "/graph" });
+        openTab({ type: "graph" });
         onClose();
       },
     },
@@ -309,22 +308,88 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
   );
 }
 
-function VaultWelcome({ mode }: { mode: "onboarding" | "file-picker" }) {
+function NewTabScreen() {
+  const { setCommandPaletteOpen, openTab } = useUIStore();
+  const createNote = useCreateNote();
+
+  const actions = [
+    {
+      label: "New note",
+      kbd: "⌘N",
+      action: () => createNote(),
+    },
+    {
+      label: "Open note",
+      kbd: "⌘K",
+      action: () => setCommandPaletteOpen(true),
+    },
+    {
+      label: "Dashboard",
+      kbd: "⌘D",
+      action: () => openTab({ type: "dashboard" }),
+    },
+    {
+      label: "Graph",
+      kbd: "⌘G",
+      action: () => openTab({ type: "graph" }),
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {actions.map(({ label, kbd, action }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={action}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontSize: 13.5,
+              color: "var(--m-accent)",
+              fontFamily: "var(--m-sans)",
+              textAlign: "left",
+              letterSpacing: 0.1,
+            }}
+          >
+            {label}{" "}
+            <span
+              style={{
+                fontFamily: "var(--m-mono)",
+                fontSize: 12.5,
+                opacity: 0.6,
+              }}
+            >
+              ({kbd})
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VaultWelcome() {
   const { setVaultPath } = useVaultStore();
-  const { setCommandPaletteOpen } = useUIStore();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
-    if (mode === "onboarding") {
-      setLoading(true);
-      try {
-        const selected = await open({ directory: true, multiple: false });
-        if (typeof selected === "string") setVaultPath(selected);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setCommandPaletteOpen(true);
+    setLoading(true);
+    try {
+      const selected = await open({ directory: true, multiple: false });
+      if (typeof selected === "string") setVaultPath(selected);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -355,7 +420,7 @@ function VaultWelcome({ mode }: { mode: "onboarding" | "file-picker" }) {
               marginBottom: 8,
             }}
           >
-            {mode === "onboarding" ? "Select a vault folder" : "Open a note"}
+            Select a vault folder
           </div>
           <div
             style={{
@@ -364,16 +429,8 @@ function VaultWelcome({ mode }: { mode: "onboarding" | "file-picker" }) {
               lineHeight: 1.6,
             }}
           >
-            {mode === "onboarding" ? (
-              <>
-                Choose a local folder containing your{" "}
-                <span style={{ fontFamily: "var(--m-mono)" }}>.md</span> notes.
-              </>
-            ) : (
-              <>
-                Press <Kbd>⌘K</Kbd> or click below to open a note.
-              </>
-            )}
+            Choose a local folder containing your{" "}
+            <span style={{ fontFamily: "var(--m-mono)" }}>.md</span> notes.
           </div>
         </div>
         <button
@@ -393,11 +450,7 @@ function VaultWelcome({ mode }: { mode: "onboarding" | "file-picker" }) {
             transition: "opacity 120ms",
           }}
         >
-          {mode === "onboarding"
-            ? loading
-              ? "Opening…"
-              : "Open Folder"
-            : "Open a note"}
+          {loading ? "Opening…" : "Open Folder"}
         </button>
       </div>
     </div>
@@ -413,8 +466,7 @@ export default function AppShell() {
     tabs,
     activeTabId,
   } = useUIStore();
-  const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
-  const { location } = useRouterState();
+  const { vaultPath, setActiveNote } = useVaultStore();
 
   useGlobalHotkeys();
 
@@ -427,11 +479,9 @@ export default function AppShell() {
     }
   }, [activeTabId, tabs, setActiveNote]);
 
-  const isEditorView = location.pathname.startsWith("/editor");
-
   const mainContent = !vaultPath ? (
-    <VaultWelcome mode="onboarding" />
-  ) : tabs.length > 0 ? (
+    <VaultWelcome />
+  ) : (
     <>
       {tabs.map((tab) => (
         <div
@@ -445,13 +495,10 @@ export default function AppShell() {
           {tab.type === "note" && <Editor noteId={tab.noteId} />}
           {tab.type === "dashboard" && <Dashboard />}
           {tab.type === "graph" && <GraphView />}
+          {tab.type === "empty" && <NewTabScreen />}
         </div>
       ))}
     </>
-  ) : !activeNoteId && !isEditorView ? (
-    <VaultWelcome mode="file-picker" />
-  ) : (
-    <Outlet />
   );
 
   return (
@@ -522,7 +569,7 @@ export default function AppShell() {
           minWidth: 0,
         }}
       >
-        {vaultPath && tabs.length > 0 && <TabBar />}
+        {vaultPath && <TabBar />}
         <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
           {mainContent}
         </div>

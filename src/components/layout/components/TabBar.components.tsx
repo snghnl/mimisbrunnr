@@ -3,12 +3,14 @@ import { useUIStore } from "@/store/uiStore";
 import type { Tab } from "@/types/tab";
 
 function tabLabel(tab: Tab): string {
+  if (tab.type === "empty") return "New Tab";
   if (tab.type === "note") return tab.title;
   if (tab.type === "dashboard") return "Dashboard";
   return "Graph";
 }
 
 function TabIcon({ tab }: { tab: Tab }) {
+  if (tab.type === "empty") return null;
   if (tab.type === "note") return <FileText size={11} />;
   if (tab.type === "dashboard") return <LayoutDashboard size={11} />;
   return <Share2 size={11} />;

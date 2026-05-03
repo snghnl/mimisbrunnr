@@ -1,10 +1,10 @@
-import { Pencil, House, Share2 } from "lucide-react";
+import { Pencil, LayoutDashboard, Share2 } from "lucide-react";
 import { Kbd } from "@/components/ui/atoms";
 import { useUIStore } from "@/store/uiStore";
 
 const NAV = [
   { id: "editor", label: "Editor", icon: Pencil, kbd: "⌘E" },
-  { id: "dashboard", label: "Dashboard", icon: House, kbd: "⌘D" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, kbd: "⌘D" },
   { id: "graph", label: "Graph", icon: Share2, kbd: "⌘G" },
 ] as const;
 

@@ -24,6 +24,12 @@ interface UIStore {
   setActiveTabId: (id: string) => void;
 }
 
+function newEmptyTab(): Tab {
+  return { type: "empty", id: crypto.randomUUID() };
+}
+
+const initialEmptyTab = newEmptyTab();
+
 export const useUIStore = create<UIStore>()(
   persist(
     (set) => ({
@@ -41,8 +47,8 @@ export const useUIStore = create<UIStore>()(
         })),
       focusDir: (path) => set({ focusedDir: path }),
       clearFocusedDir: () => set({ focusedDir: null }),
-      tabs: [],
-      activeTabId: null,
+      tabs: [initialEmptyTab],
+      activeTabId: initialEmptyTab.id,
       openTab: (tabDef: TabInput, force = false) =>
         set((state) => {
           if (force || state.tabs.length === 0 || state.activeTabId === null) {
@@ -52,7 +58,9 @@ export const useUIStore = create<UIStore>()(
                 ? { type: "note", id, noteId: tabDef.noteId, title: tabDef.title }
                 : tabDef.type === "dashboard"
                   ? { type: "dashboard", id }
-                  : { type: "graph", id };
+                  : tabDef.type === "empty"
+                    ? { type: "empty", id }
+                    : { type: "graph", id };
             return { tabs: [...state.tabs, newTab], activeTabId: id };
           }
           const updatedTabs = state.tabs.map((t) => {
@@ -61,6 +69,8 @@ export const useUIStore = create<UIStore>()(
               return { type: "note" as const, id: t.id, noteId: tabDef.noteId, title: tabDef.title };
             if (tabDef.type === "dashboard")
               return { type: "dashboard" as const, id: t.id };
+            if (tabDef.type === "empty")
+              return { type: "empty" as const, id: t.id };
             return { type: "graph" as const, id: t.id };
           });
           return { tabs: updatedTabs };
@@ -68,6 +78,10 @@ export const useUIStore = create<UIStore>()(
       closeTab: (id) =>
         set((state) => {
           const filtered = state.tabs.filter((t) => t.id !== id);
+          if (filtered.length === 0) {
+            const empty = newEmptyTab();
+            return { tabs: [empty], activeTabId: empty.id };
+          }
           let activeTabId = state.activeTabId;
           if (activeTabId === id) {
             const idx = state.tabs.findIndex((t) => t.id === id);
@@ -80,7 +94,15 @@ export const useUIStore = create<UIStore>()(
     }),
     {
       name: "ui-store",
-      partialize: (state) => ({ tabs: state.tabs, activeTabId: state.activeTabId }),
+      partialize: (state) => ({
+        tabs: state.tabs,
+        activeTabId: state.activeTabId,
+      }),
+      merge: (persistedState, currentState) => {
+        const ps = persistedState as { tabs?: Tab[]; activeTabId?: string | null };
+        if (!ps.tabs?.length) return currentState;
+        return { ...currentState, ...ps };
+      },
     },
   ),
 );
