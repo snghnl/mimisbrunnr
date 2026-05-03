@@ -17,6 +17,8 @@ pub fn run() {
             commands::fs::scan_vault,
             commands::fs::read_note,
             commands::fs::write_note,
+            commands::fs::delete_note,
+            commands::fs::rename_note,
             commands::fs::list_dir,
             commands::fs::home_dir,
         ])

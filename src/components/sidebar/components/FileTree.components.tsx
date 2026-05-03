@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useVaultStore } from "@/store/vaultStore";
 import { useUIStore } from "@/store/uiStore";
@@ -12,6 +12,22 @@ import {
   FileIcon,
   Plus,
 } from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
   const [open, setOpen] = useState(depth === 0);
@@ -77,9 +93,20 @@ function FolderItem({ node, depth }: { node: FolderNode; depth: number }) {
 }
 
 function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
-  const { activeNoteId } = useVaultStore();
-  const { clearFocusedDir, openTab } = useUIStore();
+  const { activeNoteId, vaultPath, setActiveNote } = useVaultStore();
+  const { clearFocusedDir, openTab, tabs, closeTab, updateNoteTab } = useUIStore();
+  const queryClient = useQueryClient();
   const active = activeNoteId === node.path;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renaming) {
+      inputRef.current?.select();
+    }
+  }, [renaming]);
 
   const handleClick = (e: React.MouseEvent) => {
     const force = e.metaKey || e.ctrlKey;
@@ -88,44 +115,143 @@ function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
     openTab({ type: "note", noteId: node.path, title }, force);
   };
 
+  const handleDelete = async () => {
+    const fullPath = `${vaultPath}/${node.path}`;
+    await invoke("delete_note", { path: fullPath });
+    tabs
+      .filter((t) => t.type === "note" && t.noteId === node.path)
+      .forEach((t) => closeTab(t.id));
+    if (activeNoteId === node.path) setActiveNote(null);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+    setConfirmOpen(false);
+  };
+
+  const startRename = () => {
+    setRenameValue(node.name.replace(/\.md$/, ""));
+    setRenaming(true);
+  };
+
+  const commitRename = async () => {
+    const stem = renameValue.trim();
+    if (!stem || stem + ".md" === node.name) {
+      setRenaming(false);
+      return;
+    }
+    const newName = stem + ".md";
+    const dir = node.path.includes("/")
+      ? node.path.slice(0, node.path.lastIndexOf("/"))
+      : null;
+    const newRelPath = dir ? `${dir}/${newName}` : newName;
+    const oldFullPath = `${vaultPath}/${node.path}`;
+    const newFullPath = `${vaultPath}/${newRelPath}`;
+    await invoke("rename_note", { oldPath: oldFullPath, newPath: newFullPath });
+    updateNoteTab(node.path, newRelPath, stem);
+    if (activeNoteId === node.path) setActiveNote(newRelPath);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+    setRenaming(false);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitRename();
+    } else if (e.key === "Escape") {
+      setRenaming(false);
+    }
+  };
+
+  const rowStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: `3px 9px 3px ${9 + depth * 12 + 14}px`,
+    color: active ? "var(--m-text)" : "var(--m-text-2)",
+    background: active
+      ? "color-mix(in oklch, var(--m-accent) 12%, transparent)"
+      : "transparent",
+    borderLeft: active
+      ? "2px solid var(--m-accent)"
+      : "2px solid transparent",
+    fontSize: 12,
+    cursor: "pointer",
+  };
+
   return (
-    <div
-      onClick={handleClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        padding: `3px 9px 3px ${9 + depth * 12 + 14}px`,
-        color: active ? "var(--m-text)" : "var(--m-text-2)",
-        background: active
-          ? "color-mix(in oklch, var(--m-accent) 12%, transparent)"
-          : "transparent",
-        borderLeft: active
-          ? "2px solid var(--m-accent)"
-          : "2px solid transparent",
-        fontSize: 12,
-        cursor: "pointer",
-      }}
-    >
-      <span
-        style={{
-          color: active ? "var(--m-accent)" : "var(--m-text-4)",
-          display: "inline-flex",
-        }}
-      >
-        <FileIcon size={11} />
-      </span>
-      <span
-        style={{
-          flex: 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {node.name}
-      </span>
-    </div>
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            onClick={renaming ? undefined : handleClick}
+            style={rowStyle}
+          >
+            <span
+              style={{
+                color: active ? "var(--m-accent)" : "var(--m-text-4)",
+                display: "inline-flex",
+                flexShrink: 0,
+              }}
+            >
+              <FileIcon size={11} />
+            </span>
+            {renaming ? (
+              <input
+                ref={inputRef}
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={handleRenameKeyDown}
+                onBlur={commitRename}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "1px solid var(--m-accent)",
+                  outlineOffset: 1,
+                  borderRadius: 2,
+                  color: "var(--m-text)",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                  padding: "0 2px",
+                  minWidth: 0,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span
+                style={{
+                  flex: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {node.name}
+              </span>
+            )}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={startRename}>Rename</ContextMenuItem>
+          <ContextMenuItem variant="destructive" onSelect={() => setConfirmOpen(true)}>
+            Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete note?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{node.name}&rdquo; will be permanently deleted from disk.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
