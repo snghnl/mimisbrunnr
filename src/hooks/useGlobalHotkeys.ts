@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useUIStore } from "@/store/uiStore";
+import { useCreateNote } from "@/hooks/useCreateNote";
 
 export function useGlobalHotkeys(): void {
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
@@ -10,6 +11,19 @@ export function useGlobalHotkeys(): void {
   const setActiveTabId = useUIStore((s) => s.setActiveTabId);
   const tabs = useUIStore((s) => s.tabs);
   const activeTabId = useUIStore((s) => s.activeTabId);
+  const createNote = useCreateNote();
+
+  // New note
+  useHotkeys(
+    "meta+n, ctrl+n",
+    (e) => {
+      e.preventDefault();
+      const activeTab = tabs.find((t) => t.id === activeTabId);
+      createNote({ force: activeTab?.type !== "empty" });
+    },
+    { enableOnContentEditable: true, enableOnFormTags: true },
+    [tabs, activeTabId, createNote],
+  );
 
   // Open command palette
   useHotkeys(
