@@ -1,4 +1,4 @@
-Status: needs-triage
+Status: done
 
 # Right-click context menu on tabs
 
@@ -8,13 +8,13 @@ Right-clicking a note tab in the `TabBar` opens a context menu with tab manageme
 
 ## Acceptance criteria
 
-- [ ] Right-clicking a note tab opens a context menu
-- [ ] "Rename" and "Delete" actions function identically to the FileTree context menu
-- [ ] "Close" closes the current tab (equivalent to the existing close button)
-- [ ] "Close Others" closes all tabs except the one right-clicked
-- [ ] "Close All to the Right" closes all tabs ordered after the right-clicked tab
-- [ ] Right-clicking a non-note tab (dashboard, graph) shows only the tab-management actions, not Rename/Delete
-- [ ] Context menu does not appear on the empty/placeholder tab
+- [x] Right-clicking a note tab opens a context menu
+- [x] "Rename" and "Delete" actions function identically to the FileTree context menu
+- [x] "Close" closes the current tab (equivalent to the existing close button)
+- [x] "Close Others" closes all tabs except the one right-clicked
+- [x] "Close All to the Right" closes all tabs ordered after the right-clicked tab
+- [x] Right-clicking a non-note tab (dashboard, graph) shows only the tab-management actions, not Rename/Delete
+- [x] Context menu does not appear on the empty/placeholder tab
 
 ## Blocked by
 

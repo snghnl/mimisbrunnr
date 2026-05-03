@@ -23,6 +23,8 @@ interface UIStore {
   closeTab: (id: string) => void;
   setActiveTabId: (id: string) => void;
   updateNoteTab: (oldNoteId: string, newNoteId: string, newTitle: string) => void;
+  closeOthers: (id: string) => void;
+  closeToTheRight: (id: string) => void;
 }
 
 function newEmptyTab(): Tab {
@@ -100,6 +102,21 @@ export const useUIStore = create<UIStore>()(
               : t
           ),
         })),
+      closeOthers: (id) =>
+        set((state) => {
+          const tab = state.tabs.find((t) => t.id === id);
+          if (!tab) return state;
+          return { tabs: [tab], activeTabId: id };
+        }),
+      closeToTheRight: (id) =>
+        set((state) => {
+          const idx = state.tabs.findIndex((t) => t.id === id);
+          if (idx === -1) return state;
+          const kept = state.tabs.slice(0, idx + 1);
+          const removedIds = new Set(state.tabs.slice(idx + 1).map((t) => t.id));
+          const activeTabId = removedIds.has(state.activeTabId ?? "") ? id : state.activeTabId;
+          return { tabs: kept, activeTabId };
+        }),
     }),
     {
       name: "ui-store",

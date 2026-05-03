@@ -1,6 +1,27 @@
+import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import { X, FileText, LayoutDashboard, Share2 } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
+import { useVaultStore } from "@/store/vaultStore";
 import type { Tab } from "@/types/tab";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function tabLabel(tab: Tab): string {
   if (tab.type === "empty") return "New Tab";
@@ -17,11 +38,60 @@ function TabIcon({ tab }: { tab: Tab }) {
 }
 
 function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
-  const { setActiveTabId, closeTab } = useUIStore();
+  const { setActiveTabId, closeTab, closeOthers, closeToTheRight, tabs, updateNoteTab } =
+    useUIStore();
+  const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
+  const queryClient = useQueryClient();
 
-  return (
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renameOpen) renameInputRef.current?.select();
+  }, [renameOpen]);
+
+  const handleDelete = async () => {
+    if (tab.type !== "note") return;
+    const fullPath = `${vaultPath}/${tab.noteId}`;
+    await invoke("delete_note", { path: fullPath });
+    tabs
+      .filter((t) => t.type === "note" && t.noteId === tab.noteId)
+      .forEach((t) => closeTab(t.id));
+    if (activeNoteId === tab.noteId) setActiveNote(null);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+  };
+
+  const handleRename = async () => {
+    if (tab.type !== "note") return;
+    const stem = renameValue.trim();
+    if (!stem || stem === tab.title) return;
+    const newName = stem + ".md";
+    const dir = tab.noteId.includes("/")
+      ? tab.noteId.slice(0, tab.noteId.lastIndexOf("/"))
+      : null;
+    const newRelPath = dir ? `${dir}/${newName}` : newName;
+    const oldFullPath = `${vaultPath}/${tab.noteId}`;
+    const newFullPath = `${vaultPath}/${newRelPath}`;
+    await invoke("rename_note", { oldPath: oldFullPath, newPath: newFullPath });
+    updateNoteTab(tab.noteId, newRelPath, stem);
+    if (activeNoteId === tab.noteId) setActiveNote(newRelPath);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleRename();
+      setRenameOpen(false);
+    } else if (e.key === "Escape") {
+      setRenameOpen(false);
+    }
+  };
+
+  const tabBody = (
     <div
-      key={tab.id}
       onClick={() => setActiveTabId(tab.id)}
       style={{
         display: "flex",
@@ -88,6 +158,92 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
         <X size={10} />
       </button>
     </div>
+  );
+
+  if (tab.type === "empty") return tabBody;
+
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{tabBody}</ContextMenuTrigger>
+        <ContextMenuContent>
+          {tab.type === "note" && (
+            <>
+              <ContextMenuItem
+                onSelect={() => {
+                  setRenameValue(tab.title);
+                  setRenameOpen(true);
+                }}
+              >
+                Rename
+              </ContextMenuItem>
+              <ContextMenuItem
+                variant="destructive"
+                onSelect={() => setDeleteOpen(true)}
+              >
+                Delete
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
+          <ContextMenuItem onSelect={() => closeTab(tab.id)}>Close</ContextMenuItem>
+          <ContextMenuItem onSelect={() => closeOthers(tab.id)}>
+            Close Others
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={() => closeToTheRight(tab.id)}>
+            Close to the Right
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      {tab.type === "note" && (
+        <>
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete note?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  &ldquo;{tab.title}&rdquo; will be permanently deleted from disk.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={renameOpen} onOpenChange={setRenameOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Rename note</AlertDialogTitle>
+              </AlertDialogHeader>
+              <input
+                ref={renameInputRef}
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={handleRenameKeyDown}
+                style={{
+                  width: "100%",
+                  background: "var(--m-bg-2)",
+                  border: "1px solid var(--m-line-soft)",
+                  borderRadius: 4,
+                  color: "var(--m-text)",
+                  fontSize: 13,
+                  fontFamily: "inherit",
+                  padding: "6px 8px",
+                  outline: "none",
+                }}
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRename}>Rename</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+    </>
   );
 }
 
