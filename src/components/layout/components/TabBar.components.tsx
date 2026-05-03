@@ -38,7 +38,7 @@ function TabIcon({ tab }: { tab: Tab }) {
 }
 
 function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
-  const { setActiveTabId, closeTab, closeOthers, closeToTheRight, tabs, updateNoteTab } =
+  const { setActiveTabId, closeTab, closeOthers, closeToTheRight, tabs, updateNoteTab, openTab } =
     useUIStore();
   const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
   const queryClient = useQueryClient();
@@ -88,6 +88,26 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
     } else if (e.key === "Escape") {
       setRenameOpen(false);
     }
+  };
+
+  const handleDuplicate = async () => {
+    if (tab.type !== "note" || !vaultPath) return;
+    const fullPath = `${vaultPath}/${tab.noteId}`;
+    const newFullPath = await invoke<string>("duplicate_note", { path: fullPath });
+    const relPath = newFullPath.slice(vaultPath.length + 1);
+    const title = relPath.split("/").pop()!.replace(/\.md$/, "");
+    openTab({ type: "note", noteId: relPath, title }, true);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+  };
+
+  const handleCopyPath = () => {
+    if (tab.type !== "note" || !vaultPath) return;
+    navigator.clipboard.writeText(`${vaultPath}/${tab.noteId}`);
+  };
+
+  const handleRevealInFinder = () => {
+    if (tab.type !== "note" || !vaultPath) return;
+    invoke("reveal_in_finder", { path: `${vaultPath}/${tab.noteId}` });
   };
 
   const tabBody = (
@@ -183,6 +203,10 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
               >
                 Delete
               </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem onSelect={handleDuplicate}>Duplicate Note</ContextMenuItem>
+              <ContextMenuItem onSelect={handleCopyPath}>Copy File Path</ContextMenuItem>
+              <ContextMenuItem onSelect={handleRevealInFinder}>Reveal in Finder</ContextMenuItem>
               <ContextMenuSeparator />
             </>
           )}

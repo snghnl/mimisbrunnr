@@ -16,6 +16,7 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
@@ -283,6 +284,26 @@ function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
     }
   };
 
+  const handleDuplicate = async () => {
+    if (!vaultPath) return;
+    const fullPath = `${vaultPath}/${node.path}`;
+    const newFullPath = await invoke<string>("duplicate_note", { path: fullPath });
+    const relPath = newFullPath.slice(vaultPath.length + 1);
+    const title = relPath.split("/").pop()!.replace(/\.md$/, "");
+    openTab({ type: "note", noteId: relPath, title }, true);
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+  };
+
+  const handleCopyPath = () => {
+    if (!vaultPath) return;
+    navigator.clipboard.writeText(`${vaultPath}/${node.path}`);
+  };
+
+  const handleRevealInFinder = () => {
+    if (!vaultPath) return;
+    invoke("reveal_in_finder", { path: `${vaultPath}/${node.path}` });
+  };
+
   const rowStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
@@ -357,6 +378,10 @@ function NoteItem({ node, depth }: { node: NoteNode; depth: number }) {
           <ContextMenuItem variant="destructive" onSelect={() => setConfirmOpen(true)}>
             Delete
           </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem onSelect={handleDuplicate}>Duplicate Note</ContextMenuItem>
+          <ContextMenuItem onSelect={handleCopyPath}>Copy File Path</ContextMenuItem>
+          <ContextMenuItem onSelect={handleRevealInFinder}>Reveal in Finder</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
 

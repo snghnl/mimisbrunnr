@@ -135,6 +135,57 @@ pub fn rename_note(old_path: String, new_path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn duplicate_note(path: String) -> Result<String, String> {
+    let src = Path::new(&path);
+    if !src.exists() {
+        return Err(format!("File does not exist: {}", path));
+    }
+    let content = fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let stem = src.file_stem().unwrap_or_default().to_string_lossy();
+    let dir = src.parent().unwrap_or(Path::new("."));
+    let mut candidate = dir.join(format!("{} copy.md", stem));
+    let mut counter = 2u32;
+    while candidate.exists() {
+        candidate = dir.join(format!("{} copy {}.md", stem, counter));
+        counter += 1;
+    }
+    let new_path = candidate.to_string_lossy().into_owned();
+    fs::write(&candidate, content).map_err(|e| format!("Failed to write duplicate: {}", e))?;
+    Ok(new_path)
+}
+
+#[tauri::command]
+pub fn reveal_in_finder(path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to reveal in Finder: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let dir = Path::new(&path)
+            .parent()
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or(path.clone());
+        std::process::Command::new("xdg-open")
+            .arg(&dir)
+            .spawn()
+            .map_err(|e| format!("Failed to reveal in file manager: {}", e))?;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", path))
+            .spawn()
+            .map_err(|e| format!("Failed to reveal in Explorer: {}", e))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn create_note_in_dir(dir_path: String, title: String) -> Result<String, String> {
     let dir = Path::new(&dir_path);
     if !dir.exists() || !dir.is_dir() {
@@ -239,6 +290,48 @@ mod tests {
         assert!(result.unwrap_err().contains("already exists"));
         fs::remove_file(&src).unwrap();
         fs::remove_file(&dst).unwrap();
+    }
+
+    #[test]
+    fn test_duplicate_note_success() {
+        let tmp = std::env::temp_dir();
+        let src = tmp.join("mimisbrunnr_dup_src.md").to_string_lossy().into_owned();
+        fs::write(&src, "original content").unwrap();
+        let result = duplicate_note(src.clone());
+        assert!(result.is_ok());
+        let dup = result.unwrap();
+        assert!(dup.ends_with("mimisbrunnr_dup_src copy.md"));
+        assert!(Path::new(&dup).exists());
+        assert_eq!(fs::read_to_string(&dup).unwrap(), "original content");
+        fs::remove_file(&src).unwrap();
+        fs::remove_file(&dup).unwrap();
+    }
+
+    #[test]
+    fn test_duplicate_note_unique_name() {
+        let tmp = std::env::temp_dir();
+        let src = tmp.join("mimisbrunnr_dup2_src.md").to_string_lossy().into_owned();
+        let copy1 = tmp.join("mimisbrunnr_dup2_src copy.md").to_string_lossy().into_owned();
+        fs::write(&src, "content").unwrap();
+        fs::write(&copy1, "existing copy").unwrap();
+        let result = duplicate_note(src.clone());
+        assert!(result.is_ok());
+        let dup = result.unwrap();
+        assert!(dup.ends_with("mimisbrunnr_dup2_src copy 2.md"));
+        fs::remove_file(&src).unwrap();
+        fs::remove_file(&copy1).unwrap();
+        fs::remove_file(&dup).unwrap();
+    }
+
+    #[test]
+    fn test_duplicate_note_missing_source() {
+        let tmp = std::env::temp_dir()
+            .join("mimisbrunnr_dup_nonexistent_9999.md")
+            .to_string_lossy()
+            .into_owned();
+        let result = duplicate_note(tmp);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not exist"));
     }
 
     #[test]
