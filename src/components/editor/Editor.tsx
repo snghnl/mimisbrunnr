@@ -51,6 +51,12 @@ export default function Editor({ noteId }: Props) {
     enabled: !!fullPath,
   });
 
+  const { data: notePaths = [] } = useQuery({
+    queryKey: ["vault", vaultPath],
+    queryFn: () => invoke<string[]>("scan_vault", { vaultPath: vaultPath! }),
+    enabled: !!vaultPath,
+  });
+
   const { mutate: saveNote } = useMutation({
     mutationFn: (contentToSave: string) =>
       invoke<void>("write_note", { path: fullPath!, content: contentToSave }),
@@ -219,10 +225,11 @@ export default function Editor({ noteId }: Props) {
 
           <CodeMirrorEditor
             key={noteId}
-            value={data}
+            value={data ?? ""}
             onChange={handleChange}
+            notePaths={notePaths}
             onWikilinkClick={(_target) => {
-              // TODO: navigate to note by target name
+              // TODO: navigate to note by target name (issue 04)
             }}
           />
         </div>

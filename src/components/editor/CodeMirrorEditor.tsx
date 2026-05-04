@@ -3,19 +3,21 @@ import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { mimisbrunnrTheme } from "./extensions/theme";
 import { markdownExtensions } from "./extensions/markdown";
-import { wikilinkExtensions } from "./extensions/wikilink";
+import { wikilinkExtensions, setWikilinkNotes } from "./extensions/wikilink";
 import { useEditorStore } from "@/store/editorStore";
 
 interface Props {
   value: string;
   onChange?: (value: string) => void;
   onWikilinkClick?: (target: string) => void;
+  notePaths?: string[];
 }
 
 export default function CodeMirrorEditor({
   value,
   onChange,
   onWikilinkClick,
+  notePaths,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -63,6 +65,13 @@ export default function CodeMirrorEditor({
     // intentionally empty — editor initializes once with initial value
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!viewRef.current) return;
+    viewRef.current.dispatch({
+      effects: setWikilinkNotes.of(notePaths ?? []),
+    });
+  }, [notePaths]);
 
   return <div ref={containerRef} style={{ width: "100%" }} />;
 }

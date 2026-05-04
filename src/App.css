@@ -47,11 +47,16 @@
 .m-scroll::-webkit-scrollbar-track  { background: transparent; }
 .m-scroll::-webkit-scrollbar-thumb  { background: var(--m-line); border-radius: 3px; }
 
-.cm-wikilink {
+.cm-wikilink-resolved {
   color: var(--m-accent);
-  border-bottom: 1px dashed color-mix(in oklch, var(--m-accent) 50%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--m-accent) 50%, transparent);
   padding: 0 1px;
-  cursor: pointer;
+}
+
+.cm-wikilink-unresolved {
+  color: var(--m-text-3);
+  border-bottom: 1px dashed color-mix(in oklch, var(--m-text-3) 50%, transparent);
+  padding: 0 1px;
 }
 
 @utility mono-label {
