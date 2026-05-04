@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useVaultStore } from "@/store/vaultStore";
 import { useEditorStore } from "@/store/editorStore";
+import { useUIStore } from "@/store/uiStore";
 import BreadCrumb from "./components/BreadCrumb.components";
 import WikiPopover from "./components/WikiPopover.components";
 import SlashMenu from "./components/SlashMenu.components";
@@ -18,26 +19,33 @@ interface Props {
 }
 
 export default function Editor({ noteId }: Props) {
-  const { vaultPath } = useVaultStore();
+  const { vaultPath, setActiveNote } = useVaultStore();
+  const updateNoteTab = useUIStore((s) => s.updateNoteTab);
   const queryClient = useQueryClient();
   const setCursor = useEditorStore((s) => s.setCursor);
   const setWordCount = useEditorStore((s) => s.setWordCount);
   const setLastSavedAt = useEditorStore((s) => s.setLastSavedAt);
 
-  useEffect(() => () => {
-    setCursor(null);
-    setWordCount(null);
-    setLastSavedAt(null);
-  }, [setCursor, setWordCount, setLastSavedAt]);
+  useEffect(
+    () => () => {
+      setCursor(null);
+      setWordCount(null);
+      setLastSavedAt(null);
+    },
+    [setCursor, setWordCount, setLastSavedAt],
+  );
   const [slashOpen, setSlash] = useState(false);
   const [wikiOpen, setWiki] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const contentRef = useRef("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fullPath = vaultPath ? `${vaultPath}/${noteId}` : null;
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: ["note", fullPath],
     queryFn: () => invoke<string>("read_note", { path: fullPath! }),
     enabled: !!fullPath,
@@ -99,27 +107,25 @@ export default function Editor({ noteId }: Props) {
 
   const title = noteId.split("/").pop()?.replace(/\.md$/, "") ?? noteId;
 
-  if (isLoading) {
-    return (
-      <div style={{ flex: 1, padding: "52px 56px" }}>
-        {[180, 320, 240, 280, 200, 360, 160].map((w, i) => (
-          <div
-            key={i}
-            style={{
-              height: i === 0 ? 42 : 16,
-              marginBottom: i === 0 ? 24 : 10,
-              borderRadius: 3,
-              background: "var(--m-bg-2)",
-              width: w,
-              opacity: 0.5,
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
+  const commitRename = async () => {
+    const trimmed = draftTitle.trim();
+    setIsEditingTitle(false);
+    if (!trimmed || trimmed === title || !vaultPath) return;
+    const dir = noteId.includes("/")
+      ? noteId.slice(0, noteId.lastIndexOf("/"))
+      : null;
+    const newNoteId = dir ? `${dir}/${trimmed}.md` : `${trimmed}.md`;
+    await invoke("rename_note", {
+      oldPath: `${vaultPath}/${noteId}`,
+      newPath: `${vaultPath}/${newNoteId}`,
+    });
+    queryClient.removeQueries({ queryKey: ["note", `${vaultPath}/${noteId}`] });
+    queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+    updateNoteTab(noteId, newNoteId, trimmed);
+    setActiveNote(newNoteId);
+  };
 
-  if (isError || data === undefined) {
+  if (isError) {
     return (
       <div
         style={{
@@ -163,19 +169,53 @@ export default function Editor({ noteId }: Props) {
         <div style={{ maxWidth: 680, margin: "0 auto", padding: "0 56px" }}>
           <BreadCrumb path={noteId} className="mono-label" />
 
-          <h1
-            style={{
-              fontFamily: SERIF,
-              fontWeight: 500,
-              fontSize: 38,
-              lineHeight: 1.12,
-              letterSpacing: -0.5,
-              color: "var(--m-text)",
-              margin: "0 0 32px",
-            }}
-          >
-            {title}
-          </h1>
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") setIsEditingTitle(false);
+              }}
+              style={{
+                fontFamily: SERIF,
+                fontWeight: 500,
+                fontSize: 38,
+                lineHeight: 1.12,
+                letterSpacing: -0.5,
+                color: "var(--m-text)",
+                margin: "0 0 32px",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                width: "100%",
+                padding: 0,
+                display: "block",
+              }}
+            />
+          ) : (
+            <h1
+              style={{
+                fontFamily: SERIF,
+                fontWeight: 500,
+                fontSize: 38,
+                lineHeight: 1.12,
+                letterSpacing: -0.5,
+                color: "var(--m-text)",
+                margin: "0 0 32px",
+                cursor: "text",
+              }}
+              onClick={() => {
+                setDraftTitle(title);
+                setIsEditingTitle(true);
+                setTimeout(() => titleInputRef.current?.select(), 0);
+              }}
+            >
+              {title}
+            </h1>
+          )}
 
           <CodeMirrorEditor
             key={noteId}
