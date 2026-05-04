@@ -9,7 +9,7 @@ const NAV = [
 ] as const;
 
 export default function NavTabs() {
-  const { setCommandPaletteOpen, openTab, tabs, activeTabId } = useUIStore();
+  const { openTab, setActiveTabId, tabs, activeTabId } = useUIStore();
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeView =
@@ -39,8 +39,12 @@ export default function NavTabs() {
             key={t.id}
             onClick={(e) => {
               if (t.id === "editor") {
-                // TODO: make new tab open if no active note
-                setCommandPaletteOpen(true);
+                const noteTab = tabs.find((tab) => tab.type === "note");
+                if (noteTab) {
+                  setActiveTabId(noteTab.id);
+                } else {
+                  openTab({ type: "empty" }, e.metaKey || e.ctrlKey);
+                }
               } else if (t.id === "graph") {
                 openTab({ type: "graph" }, e.metaKey || e.ctrlKey);
               } else {
