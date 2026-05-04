@@ -59,6 +59,11 @@
   padding: 0 1px;
 }
 
+.meta-held .cm-wikilink-resolved,
+.meta-held .cm-wikilink-unresolved {
+  cursor: pointer;
+}
+
 @utility mono-label {
   font-family: var(--m-mono);
   font-size: 10.5px;

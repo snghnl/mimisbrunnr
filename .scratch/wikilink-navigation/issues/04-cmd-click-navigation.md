@@ -1,4 +1,4 @@
-Status: needs-triage
+Status: done
 
 # Cmd+click navigation for resolved wikilinks
 

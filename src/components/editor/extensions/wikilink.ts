@@ -155,6 +155,14 @@ export function wikilinkExtensions(
       }
       return false;
     },
+    keydown(event, view) {
+      if (event.key === "Meta") view.dom.classList.add("meta-held");
+      return false;
+    },
+    keyup(event, view) {
+      if (event.key === "Meta") view.dom.classList.remove("meta-held");
+      return false;
+    },
   });
 
   return [notePathsField, plugin, clickHandler];

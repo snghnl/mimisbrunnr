@@ -21,6 +21,9 @@ interface Props {
 export default function Editor({ noteId }: Props) {
   const { vaultPath, setActiveNote } = useVaultStore();
   const updateNoteTab = useUIStore((s) => s.updateNoteTab);
+  const openTab = useUIStore((s) => s.openTab);
+  const tabs = useUIStore((s) => s.tabs);
+  const setActiveTabId = useUIStore((s) => s.setActiveTabId);
   const queryClient = useQueryClient();
   const setCursor = useEditorStore((s) => s.setCursor);
   const setWordCount = useEditorStore((s) => s.setWordCount);
@@ -228,8 +231,23 @@ export default function Editor({ noteId }: Props) {
             value={data ?? ""}
             onChange={handleChange}
             notePaths={notePaths}
-            onWikilinkClick={(_target) => {
-              // TODO: navigate to note by target name (issue 04)
+            onWikilinkClick={(target) => {
+              const matchedPath = notePaths.find(
+                (p) =>
+                  (p.split("/").pop()?.replace(/\.md$/, "") ?? "").toLowerCase() ===
+                  target.toLowerCase(),
+              );
+              if (!matchedPath) return; // unresolved — handled in issue 05
+              const existing = tabs.find(
+                (t) => t.type === "note" && t.noteId === matchedPath,
+              );
+              if (existing) {
+                setActiveTabId(existing.id);
+              } else {
+                const title =
+                  matchedPath.split("/").pop()?.replace(/\.md$/, "") ?? target;
+                openTab({ type: "note", noteId: matchedPath, title }, true);
+              }
             }}
           />
         </div>
