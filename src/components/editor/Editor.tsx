@@ -231,23 +231,48 @@ export default function Editor({ noteId }: Props) {
             value={data ?? ""}
             onChange={handleChange}
             notePaths={notePaths}
-            onWikilinkClick={(target) => {
-              const matchedPath = notePaths.find(
-                (p) =>
-                  (p.split("/").pop()?.replace(/\.md$/, "") ?? "").toLowerCase() ===
-                  target.toLowerCase(),
-              );
-              if (!matchedPath) return; // unresolved — handled in issue 05
-              const existing = tabs.find(
-                (t) => t.type === "note" && t.noteId === matchedPath,
-              );
-              if (existing) {
-                setActiveTabId(existing.id);
-              } else {
-                const title =
-                  matchedPath.split("/").pop()?.replace(/\.md$/, "") ?? target;
-                openTab({ type: "note", noteId: matchedPath, title }, true);
+            onWikilinkClick={async (target) => {
+              const stemMatch = (p: string) =>
+                (p.split("/").pop()?.replace(/\.md$/, "") ?? "").toLowerCase() ===
+                target.toLowerCase();
+
+              const matchedPath = notePaths.find(stemMatch);
+
+              if (matchedPath) {
+                const existing = tabs.find(
+                  (t) => t.type === "note" && t.noteId === matchedPath,
+                );
+                if (existing) {
+                  setActiveTabId(existing.id);
+                } else {
+                  const title =
+                    matchedPath.split("/").pop()?.replace(/\.md$/, "") ?? target;
+                  openTab({ type: "note", noteId: matchedPath, title }, true);
+                }
+                return;
               }
+
+              // Unresolved — create the note then open it
+              if (!vaultPath) return;
+              const noteId = `${target}.md`;
+
+              // Re-read cache to guard against a race where the file was
+              // just created by another action before we got here
+              const freshPaths =
+                queryClient.getQueryData<string[]>(["vault", vaultPath]) ?? [];
+              const raceMatch = freshPaths.find(stemMatch);
+              if (raceMatch) {
+                const title = raceMatch.split("/").pop()?.replace(/\.md$/, "") ?? target;
+                openTab({ type: "note", noteId: raceMatch, title }, true);
+                return;
+              }
+
+              await invoke("write_note", {
+                path: `${vaultPath}/${noteId}`,
+                content: `# ${target}`,
+              });
+              queryClient.invalidateQueries({ queryKey: ["vault", vaultPath] });
+              openTab({ type: "note", noteId, title: target }, true);
             }}
           />
         </div>
