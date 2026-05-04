@@ -64,6 +64,13 @@
   cursor: pointer;
 }
 
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility mono-label {
   font-family: var(--m-mono);
   font-size: 10.5px;

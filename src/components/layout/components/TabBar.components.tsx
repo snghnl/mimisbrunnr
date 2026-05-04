@@ -38,8 +38,15 @@ function TabIcon({ tab }: { tab: Tab }) {
 }
 
 function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
-  const { setActiveTabId, closeTab, closeOthers, closeToTheRight, tabs, updateNoteTab, openTab } =
-    useUIStore();
+  const {
+    setActiveTabId,
+    closeTab,
+    closeOthers,
+    closeToTheRight,
+    tabs,
+    updateNoteTab,
+    openTab,
+  } = useUIStore();
   const { vaultPath, activeNoteId, setActiveNote } = useVaultStore();
   const queryClient = useQueryClient();
 
@@ -93,7 +100,9 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
   const handleDuplicate = async () => {
     if (tab.type !== "note" || !vaultPath) return;
     const fullPath = `${vaultPath}/${tab.noteId}`;
-    const newFullPath = await invoke<string>("duplicate_note", { path: fullPath });
+    const newFullPath = await invoke<string>("duplicate_note", {
+      path: fullPath,
+    });
     const relPath = newFullPath.slice(vaultPath.length + 1);
     const title = relPath.split("/").pop()!.replace(/\.md$/, "");
     openTab({ type: "note", noteId: relPath, title }, true);
@@ -204,13 +213,21 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
                 Delete
               </ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuItem onSelect={handleDuplicate}>Duplicate Note</ContextMenuItem>
-              <ContextMenuItem onSelect={handleCopyPath}>Copy File Path</ContextMenuItem>
-              <ContextMenuItem onSelect={handleRevealInFinder}>Reveal in Finder</ContextMenuItem>
+              <ContextMenuItem onSelect={handleDuplicate}>
+                Duplicate Note
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={handleCopyPath}>
+                Copy File Path
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={handleRevealInFinder}>
+                Reveal in Finder
+              </ContextMenuItem>
               <ContextMenuSeparator />
             </>
           )}
-          <ContextMenuItem onSelect={() => closeTab(tab.id)}>Close</ContextMenuItem>
+          <ContextMenuItem onSelect={() => closeTab(tab.id)}>
+            Close
+          </ContextMenuItem>
           <ContextMenuItem onSelect={() => closeOthers(tab.id)}>
             Close Others
           </ContextMenuItem>
@@ -227,12 +244,15 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete note?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  &ldquo;{tab.title}&rdquo; will be permanently deleted from disk.
+                  &ldquo;{tab.title}&rdquo; will be permanently deleted from
+                  disk.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleDelete}>
+                  Delete
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -261,7 +281,9 @@ function TabElement({ tab, active }: { tab: Tab; active: boolean }) {
               />
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleRename}>Rename</AlertDialogAction>
+                <AlertDialogAction onClick={handleRename}>
+                  Rename
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -276,6 +298,7 @@ export default function TabBar() {
 
   return (
     <div
+      className="no-scrollbar"
       style={{
         height: 34,
         display: "flex",
@@ -285,6 +308,7 @@ export default function TabBar() {
         paddingLeft: 4,
         flexShrink: 0,
         overflowX: "auto",
+        overflowY: "hidden",
       }}
     >
       {tabs.map((tab) => (
