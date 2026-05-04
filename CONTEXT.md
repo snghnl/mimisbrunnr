@@ -168,11 +168,11 @@ mimisbrunnr/
 ## MVP Roadmap
 
 ### Phase 1 — Editor Core (Current)
-- [ ] Tauri v2 project scaffold
-- [ ] Vault directory selection and file list loading
-- [ ] CodeMirror 6 markdown editor (basic)
-- [ ] File read / write / auto-save
-- [ ] Sidebar file tree
+- [x] Tauri v2 project scaffold
+- [x] Vault directory selection and file list loading
+- [x] CodeMirror 6 markdown editor (basic)
+- [x] File read / write / auto-save
+- [x] Sidebar file tree
 - [ ] Wikilink `[[...]]` parsing and click navigation
 
 ### Phase 2 — Absorption Engine
